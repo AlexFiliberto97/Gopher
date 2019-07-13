@@ -38,14 +38,12 @@
 //char* gopherOptions.root_path;
 
 struct Gopts {
-
 	char* address;
 	int *port;
 	char* root_path;
 };
 
 struct GopherElementData {
-	
 	char type;
 	char* dispName;
 	char* path;
@@ -53,7 +51,7 @@ struct GopherElementData {
 	int port;
 };
 
-static struct Gopts gopherOptions; // = {"127.0.0.1", (int*) 7070, "./"};
+static struct Gopts gopherOptions;
 
 int setDefaultGopherOptions() {
 

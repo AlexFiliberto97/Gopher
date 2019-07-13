@@ -210,11 +210,12 @@ int serverService() {
 			struct ClientData cd;
 			cd.sock = acceptSocket;
 			cd.data = cli_data;
-			//#ifndef __linux__
-			startThread((void*)handler, (void*) &cd);
-			//#else
-				//startThread((void*) handler, (void*) &cd);
-			//#endif
+			int th = startThread((void*) handler, (void*) &cd);
+			if (th < 0) {
+				printf("Errore nell'avvio del thread handler\n");
+				continue;
+			}
+
 		} else {
    			#ifndef __linux__
 				char** cmd = (char**) malloc(sizeof(char*) * 8);
