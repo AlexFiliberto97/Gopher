@@ -473,17 +473,14 @@ int handler(void* input, int process_mode) {
 	if (file_request != 0) {
 		struct SendFileData sfd = {sock, response, response_sz};
 		
-		/*#ifndef __linux__
+		#ifndef __linux__
 			HANDLE th = (HANDLE) startThread(sendFile, (void*) &sfd);
 			WaitForSingleObject(th, INFINITE);
-		#else*/
+		#else
 			int th = startThread(sendFile, (void*) &sfd);
-
-			//startThread();
-			//sendFile((void*) &sfd);
-			if (th != 0) return -1;
-			// if (pthread_join(th, NULL) != 0) return -1;
-		//#endif
+			if (th < 0) return -1;
+			if (pthread_join(th, NULL) != 0) return -1;
+		#endif
 
 		char file_sz[11];
 		// itoa((int) response_sz, file_sz, 10);

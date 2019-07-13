@@ -5,9 +5,14 @@
 #include "pipe.h"
 #include "utils_win32.h"
 
-void init_env();
 
-void main(int argc, char** argv) {
+void init_env() {
+	initPipes();	
+	initEvents();
+}
+
+
+int main(int argc, char** argv) {
 
 	init_env();
 	
@@ -30,10 +35,7 @@ void main(int argc, char** argv) {
 		setEvent("WRITE_LOG_EVENT");
 		free(text);
 	}
-}
 
-void init_env() {
+	return 0;
 
-	initPipes();	
-	initEvents();
 }

@@ -6,10 +6,6 @@
 #include "../network.h"
 
 
-/* Function: serverInit / WIN32
-* -------------------------------
-*  
-*/
 int serverInit() { //WIN32 only
 	WSADATA wsaData;
 	int err	= WSAStartup(514, &wsaData);
@@ -21,24 +17,26 @@ int serverInit() { //WIN32 only
 }
 
 
-/* Function: processHandler
-* -------------------------------
-*  
-*/
-int processHandler(void* input) {
-	return handler(input, 1);
-}
-
-
 int main(int argc, char** argv){
+
 	serverInit();
-	addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[2]));
-	addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[3]));
-	addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[4]));
+	addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));
+	addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
+	addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[3]));
 	struct ClientData cd;
-	cd.sock = atoi(argv[1]);
-	cd.data = argv[5];
-	setRootPath(argv[6]);
-	processHandler((void*) &cd);
+	cd.sock = atoi(argv[0]);
+	cd.data = argv[4];
+
+	char* address = (char*) malloc(strlen(argv[5]) + 1);
+	int* port = (int*) malloc(sizeof(int));
+	char* root_path = (char*) malloc(strlen(argv[7]) + 1);
+
+	strcpy(address, argv[5]);
+	*port = atoi(argv[6]);
+	strcpy(root_path, argv[7]);
+
+	setGopherOptions(address, port, root_path);
+	handler((void*) &cd, 1);
+
 	return 0;
 }

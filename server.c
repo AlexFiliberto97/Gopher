@@ -216,24 +216,28 @@ int serverService() {
 				//startThread((void*) handler, (void*) &cd);
 			//#endif
 		} else {
-
-			/*
    			#ifndef __linux__
-				char** cmd = (char**) malloc(sizeof(char*) * 6);
+				char** cmd = (char**) malloc(sizeof(char*) * 8);
 	   			cmd[0] = (char*) malloc(11);
 	   			cmd[1] = (char*) malloc(11);
 	   			cmd[2] = (char*) malloc(11);
 	   			cmd[3] = (char*) malloc(11);
 	   			cmd[4] = (char*) malloc(strlen(cli_data) + 1);
-	   			cmd[5] = (char*) malloc(strlen(serverOptions.root_path) + 1);
+	   			cmd[5] = (char*) malloc(strlen(serverOptions.address) + 1);
+	   			cmd[6] = (char*) malloc(11);
+	   			cmd[7] = (char*) malloc(strlen(serverOptions.root_path) + 1);
+
 	   			sprintf(cmd[0], "%d", acceptSocket);
 	   			sprintf(cmd[1], "%d", getWriter("LOGGER_PIPE"));
 	   			sprintf(cmd[2], "%d", eventHandler("WRITE_LOG_EVENT"));
 	   			sprintf(cmd[3], "%d", eventHandler("READ_LOG_EVENT"));
 	   			sprintf(cmd[4], "%s", cli_data);
-	   			sprintf(cmd[5], "%s", serverOptions.root_path);
-				startProcess("listener.exe", 6, cmd);
-				freeMDArray(cmd, 6);
+	   			sprintf(cmd[5], "%s", serverOptions.address);
+	   			sprintf(cmd[6], "%d", serverOptions.port);
+	   			sprintf(cmd[7], "%s", serverOptions.root_path);
+
+				startProcess("win32/listener.exe", 8, cmd);
+				freeList(cmd, 8);
 			#else
 				char** cmd = (char**) malloc(sizeof(char*) * 3);
 	   			cmd[0] = (char*) malloc(11);
@@ -243,10 +247,10 @@ int serverService() {
 	   			sprintf(cmd[1], "%s", cli_data);
 	   			sprintf(cmd[2], "%s", serverOptions.root_path);
 				startProcess((void*) listener, 3, cmd);
-				freeMDArray(cmd, 3);
+				freeList(cmd, 3);
 			#endif
 
-		*/
+		
 		}
 	}
     return 0;
