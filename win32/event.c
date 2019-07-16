@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include "../error.h"
 
 #define MAX_EVENTS 10
 
@@ -25,7 +26,7 @@ DWORD newEventIndex() {
 			return i;
 		}
 	}
-	return -1;
+	return NOT_FOUND;
 }	
 
 HANDLE eventHandler(char* name) {
@@ -53,10 +54,10 @@ int createEvent(char* name, BOOL pulse) {
 
 	DWORD index = newEventIndex();
 	SECURITY_ATTRIBUTES eventSA = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-	if (index == -1) return -1;
+	if (index == -1) return EVENT_UNAVAILABLE;
 
     HANDLE event = CreateEvent(&eventSA, FALSE, pulse, NULL); 
-    if (event == NULL) return -1;
+    if (event == NULL) return EVENT_ERROR;
 
     Events[index].name = (char*) malloc(strlen(name));
     if (Events[index].name == NULL) return -1;
@@ -71,7 +72,7 @@ BOOL addEvent(char* name, HANDLE hEvent) {
 	if (index == -1) return FALSE;
 
 	Events[index].name = (char*) malloc(strlen(name));
-	if (Events[index].name == NULL) return -1;
+	if (Events[index].name == NULL) return FALSE;
     strcpy(Events[index].name, name);
 	Events[index].hEvent = hEvent;
 	return TRUE;

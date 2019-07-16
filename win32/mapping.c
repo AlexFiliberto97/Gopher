@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include "../error.h"
 
 //Create a new file mapping
 HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) {
@@ -8,43 +9,24 @@ HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) 
 	HANDLE hFile, hMap;
 	BOOL succ;
 
-	hFile = CreateFile(
-			    path,
-		        GENERIC_READ,
-		        FILE_SHARE_READ,
-		        NULL,
-		        OPEN_EXISTING,
-		        FILE_ATTRIBUTE_NORMAL,
-				NULL
-		    );
-
+	hFile = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) return NULL;
 
-	*size = GetFileSize(hFile, NULL);
+	*size = GetFileSize(hFile, NULL); 
 	OVERLAPPED overlapped = {0};
 	succ = LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK, 0, *size, 0, &overlapped);
-	
 	if (!succ) {
 		CloseHandle(hFile);
 		return NULL;
 	}
 
-	hMap = CreateFileMapping(
-				hFile,
-				NULL,
-				PAGE_READONLY,
-				0,
-				0,
-				mapName
-			);
-
+	hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0,mapName );
 	if (hMap == NULL) {
 		CloseHandle(hFile);
 		return NULL;
 	}
 
 	succ = UnlockFileEx(hFile, 0, *size, 0, &overlapped);
-	
 	if (!succ) {
 		CloseHandle(hFile);
 		return NULL;
@@ -58,13 +40,7 @@ HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) 
 HANDLE openMapping(char *mapName) {
 	
 	HANDLE hMap;
-
-	hMap = OpenFileMapping(
-				FILE_MAP_READ,
-				TRUE,
-				mapName
-			);
-
+	hMap = OpenFileMapping(FILE_MAP_READ, TRUE, mapName);
 	if (hMap == NULL) return NULL;
 	return hMap;
 }
@@ -83,6 +59,6 @@ int deleteMapping(char *pMap) {
 
 	BOOL succ;
 	succ = UnmapViewOfFile(pMap);
-	if (!succ) return 1;
+	if (!succ) return DELETE_MAPPING;
 	return 0;
 }

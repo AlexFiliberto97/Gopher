@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "network.h"
+#include "error.h"
 
 #ifndef __linux__
 	#include <windows.h>
@@ -64,6 +65,7 @@ int setDefaultGopherOptions() {
 	*gopherOptions.port = 7070;
 	strcpy(gopherOptions.root_path, "./");
 	return 0;
+
 }
 
 void setGopherOptions(char* address, int* port, char* root_path) {
@@ -75,10 +77,8 @@ void setGopherOptions(char* address, int* port, char* root_path) {
 	gopherOptions.address = address;
 	gopherOptions.port = port;
 	gopherOptions.root_path = root_path;
+
 }
-
-
-
 
 
 /* Function: getGopherType
@@ -119,6 +119,7 @@ char** getDispNamesAssoc(char* path, int *count) {
 	char* fname = "_dispnames";
 	char dispNamesPath[strlen(path)+strlen(fname)+1];
 	sprintf(dispNamesPath, "%s%s", path, fname);
+	if (existsFile(dispNamesPath) != 0) return NULL;
 	int n;
 	char** lista = readlines(dispNamesPath, &n);
 	if (lista == NULL) {
@@ -231,7 +232,6 @@ char** gopherListDir(char* path, int *n) {
 	struct Dict assoc_dict;
 	char** assoc = getDispNamesAssoc(path, &assoc_count);
 	if (assoc == NULL) {
-		printf("Errore in gopherListDir - getDispNamesAssoc\n");
 		printf("File _dispnames non disponibile\n");
 		use_assoc = 0;
 	} else {
@@ -368,7 +368,6 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, char* cli_
 
 		char* item = getItem(req_path, &type);
 
-
 		if (type == 0) { // FILE
 
 			printf("  %s -> file\n", item);
@@ -416,22 +415,12 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, char* cli_
 
 }
 
-/*
-#ifndef __linux__
-	DWORD WINAPI sendFile(void* input) {
-		struct SendFileData* sfd = (struct SendFileData*) input;
-		int err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
-		// return err;
-	}
-#else
 
-*/
-	void* sendFile(void* input) {
-		struct SendFileData* sfd = (struct SendFileData*) input;
-		int err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
-		// return (void*) err;
-	}
-//#endif
+void* sendFile(void* input) {
+	struct SendFileData* sfd = (struct SendFileData*) input;
+	int err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
+	// return (void*) err;
+}
 
 
 int handler(void* input, int process_mode) {
@@ -470,7 +459,7 @@ int handler(void* input, int process_mode) {
 
 	if (file_request != 0) {
 		struct SendFileData sfd = {sock, response, response_sz};
-		
+
 		#ifndef __linux__
 			HANDLE th = (HANDLE) startThread(sendFile, (void*) &sfd);
 			WaitForSingleObject(th, INFINITE);
@@ -481,7 +470,6 @@ int handler(void* input, int process_mode) {
 		#endif
 
 		char file_sz[11];
-		// itoa((int) response_sz, file_sz, 10);
 		sprintf(file_sz, "%lu", (unsigned long int) response_sz);
 
 		char* pipe_msg = (char*) malloc(strlen(cli_data) + strlen(request) + strlen(file_sz) + 9);
@@ -489,7 +477,8 @@ int handler(void* input, int process_mode) {
 
 		#ifndef __linux__
 		 	waitEvent("WRITE_LOG_EVENT");
-		 	writePipe("LOGGER_PIPE", pipe_msg);
+		 	err = writePipe("LOGGER_PIPE", pipe_msg);
+		 	if (err < 0) {/* on va bene*/ }
 		 	setEvent("READ_LOG_EVENT");
 		#else
 		    pthread_mutex_lock(shared_lock->mutex);
@@ -535,6 +524,7 @@ int handler(void* input, int process_mode) {
 			}
 		#endif
 	}
+
 	free(cd->data);
 	printf("I handled the request: %d\n\n\n", sock);
 	return 0;
