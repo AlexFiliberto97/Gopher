@@ -132,10 +132,10 @@ int start_env() {
 
 	//Starting garbage collector for threads e processes
 	success = startThread(threadCollector, NULL);
-	if (success != 0) return success;
+	if (success < 0) return success;
 
 	success = startThread(processCollector, NULL);
-	if (success != 0) return success;
+	if (success < 0) return success;
 	
 	return 0;
 }
