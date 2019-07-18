@@ -1,9 +1,7 @@
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include "utils.h"
 #include "network.h"
-#include "error.h"
 
 #ifndef __linux__
 	#include <windows.h>
@@ -36,48 +34,39 @@
 #define SERVER_ERROR_MSG "\n>>> Errore sul server\n"
 
 
-//char* gopherOptions.root_path;
-
-struct Gopts {
-	char* address;
-	int *port;
-	char* root_path;
-};
-
 struct GopherElementData {
 	char type;
 	char* dispName;
 	char* path;
 	char* host;
-	int port;
+	char* port;
 };
 
-static struct Gopts gopherOptions;
 
-int setDefaultGopherOptions() {
+struct HandlerData {
+	int sock;
+	int port;
+	char* cli_data;
+	char* address;
+	char* root_path;
+	char* abs_root_path;
+};
 
-	gopherOptions.address = (char*)malloc(10);
-	gopherOptions.port = (int*)malloc(sizeof(int));
-	gopherOptions.root_path = (char*)malloc(3);
-	if (gopherOptions.address == NULL || gopherOptions.port == NULL || gopherOptions.address == NULL) return -1;
 
-	strcpy(gopherOptions.address, "127.0.0.1");
-	*gopherOptions.port = 7070;
-	strcpy(gopherOptions.root_path, "./");
-	return 0;
-
-}
-
-void setGopherOptions(char* address, int* port, char* root_path) {
-
-	free(gopherOptions.address);
-	free(gopherOptions.port);
-	free(gopherOptions.root_path);
-
-	gopherOptions.address = address;
-	gopherOptions.port = port;
-	gopherOptions.root_path = root_path;
-
+void freeHandlerDataStruct(struct HandlerData* hd, int process_mode) {
+	if (process_mode == 0) {
+		free(hd->cli_data);
+		free(hd->address);
+		free(hd->root_path);
+		free(hd);
+	} else {
+		#ifdef __linux__
+			free_shared_memory(hd->cli_data, strlen(hd->cli_data) + 1);
+			free_shared_memory(hd->address, strlen(hd->address) + 1);
+			free_shared_memory(hd->root_path, strlen(hd->root_path) + 1);
+			free_shared_memory(hd, sizeof(hd));
+		#endif
+	} 
 }
 
 
@@ -119,7 +108,9 @@ char** getDispNamesAssoc(char* path, int *count) {
 	char* fname = "_dispnames";
 	char dispNamesPath[strlen(path)+strlen(fname)+1];
 	sprintf(dispNamesPath, "%s%s", path, fname);
-	if (existsFile(dispNamesPath) != 0) return NULL;
+	if (existsFile(dispNamesPath) == 0) {
+		return NULL;
+	}
 	int n;
 	char** lista = readlines(dispNamesPath, &n);
 	if (lista == NULL) {
@@ -191,7 +182,15 @@ char* getItem(char* path, int *type) {
 * -------------------------------
 *  
 */
-char** gopherListDir(char* path, int *n) {
+char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
+
+	char* tmp = (char*) malloc(strlen(req) + 3);
+	if (tmp == NULL) return NULL;
+	sprintf(tmp, "/%s/", req);
+
+	char* request = fixPath(tmp);
+	if (request == NULL) return NULL;
+	free(tmp);
 
 	int err;
 
@@ -206,6 +205,7 @@ char** gopherListDir(char* path, int *n) {
 	} else if (files_count == 0) {
 		return NULL;
 	}
+
 
 	//////////////////////////////////////////////////////////////////
 	// Carico il file delle estensioni riga per riga
@@ -227,22 +227,25 @@ char** gopherListDir(char* path, int *n) {
 
 	//////////////////////////////////////////////////////////////////
 	// Carico il file _dispnames relativo al path dato riga per riga
-	int use_assoc;
+	int use_assoc = 0;
 	int assoc_count;
 	struct Dict assoc_dict;
 	char** assoc = getDispNamesAssoc(path, &assoc_count);
+
 	if (assoc == NULL) {
 		printf("File _dispnames non disponibile\n");
 		use_assoc = 0;
 	} else {
-		use_assoc = 1;
+
 		// Separo i valori di assoc in coppie chiave-valore usando un Dict
 		assoc_dict = buildDict(assoc, assoc_count);
 		if (assoc_dict.err != 0) {
 			printf("Errore in gopherListDir - buildDict\n");
-			return NULL;
+		} else {
+			use_assoc = 1;
 		}
 		freeList(assoc, assoc_count);
+		
 	}
 
 	//////////////////////////////////////////////////////////////////
@@ -253,16 +256,18 @@ char** gopherListDir(char* path, int *n) {
 		printf("Errore in gopherListDir - gophList - malloc\n");
 		return NULL;
 	}
-
 	//////////////////////////////////////////////////////////////////
 
-	struct FilePath fp;
+
 	struct GopherElementData ged;
-	fp.path = path;
 
 	for (int i = 0; i < files_count; i++) {
-		fp.name = files_list[i];
-		ged.type = getGopherType(getFullPath(fp), ext_dict);
+		
+		ged.path = (char*) malloc(strlen(request) + strlen(files_list[i]) + 1);
+		sprintf(ged.path, "%s%s", request, files_list[i]);
+
+		ged.type = getGopherType(ged.path, ext_dict);
+
 		if (use_assoc == 1) {
 			ged.dispName = getAssocValue(files_list[i], assoc_dict);
 			if (ged.dispName == NULL) {
@@ -271,26 +276,31 @@ char** gopherListDir(char* path, int *n) {
 		} else {
 			ged.dispName = files_list[i];
 		}
-		ged.path = getFullPathNoRoot(fp);
-		ged.host = gopherOptions.address;
-		ged.port = *gopherOptions.port;
 
-		char port[6];
-		// itoa(ged.port, port, 10);
-		sprintf(port, "%d", ged.port);
+		ged.host = (char*) malloc(strlen(hd->address) + 1);
+		if (ged.host == NULL) return NULL;
+		strcpy(ged.host, hd->address);
 
-		char* gophString = (char*) malloc(1 + strlen(ged.dispName) + strlen(ged.path) + strlen(ged.host) + strlen(port) + 5);
+		ged.port = (char*) malloc(6);
+		if (ged.port == NULL) return NULL;
+		sprintf(ged.port, "%d", hd->port);
+
+		char* gophString = (char*) malloc(1 + strlen(ged.dispName) + strlen(ged.path) + strlen(ged.host) + strlen(ged.port) + 5);
 		if (gophString == NULL) {
 			printf("Errore in gopherListDir - malloc\n");
 			return NULL;
 		}
 
-		sprintf(gophString, "%c%s\t%s\t%s\t%s", ged.type, ged.dispName, ged.path, ged.host, port);
-
+		sprintf(gophString, "%c%s\t%s\t%s\t%s", ged.type, ged.dispName, ged.path, ged.host, ged.port);
 
 		gophList[i] = gophString;
 
+		free(ged.path);
+		free(ged.host);
+		free(ged.port);
+
 	}
+
 
 	*n = files_count;
 
@@ -322,104 +332,98 @@ int checkEmptyRequest(char* req) {
 * -------------------------------
 *  
 */
-char* handleRequest(char* request, size_t* response_sz, int* mapping, char* cli_data, int process_mode) {
+char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode) {
 
 	char* response;
 
-	if (checkEmptyRequest(request) != 0) {
-		printf("Richiesta: \n  %s\n", gopherOptions.root_path);
+	printf("Richiesta:\n  %s\n", request);
 
+	int type = -1;
+	char* input_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);
+	if (input_path == NULL) {
+		printf("Errore in handleRequest - malloc\n");
+		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
+		if (response == NULL) return NULL;
+		strcpy(response, SERVER_ERROR_MSG);
+		*response_sz = strlen(response) + 1;
+		return response;
+	}
+	sprintf(input_path, "%s%s", hd->abs_root_path, request);
+
+	char* req_path = fixPath(input_path);
+	free(input_path);
+	if (req_path == NULL) {
+		printf("Errore in handleRequest - fixPath\n");
+		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
+		if (response == NULL) return NULL;
+		strcpy(response, SERVER_ERROR_MSG);
+		*response_sz = strlen(response) + 1;
+		return response;
+	}
+
+	printf("Percorso:\n  %s\n", req_path);
+
+	char* item = getItem(req_path, &type);
+
+	if (type == 0) { // FILE
+
+		printf("  %s -> file\n", item);
+		size_t file_sz;
+		#ifndef __linux__
+			HANDLE hMap = createMapping(item, hd->cli_data, &file_sz, process_mode);
+			response = readMapping(hMap);
+			*response_sz = file_sz;
+			*mapping = 1;
+		#else
+			response = createAndOpenMapping(item, &file_sz, process_mode);
+			*response_sz = file_sz;
+			*mapping = 1;
+		#endif
+
+	} else if (type == 1) { // FOLDER
+
+		printf("  %s -> folder\n", item);
+		printf("Genero la lista dei contenuti di %s\n", item);
 		int count;
-		char** list = gopherListDir(gopherOptions.root_path, &count);
+		char** list = gopherListDir(item, request, &count, hd);
 		if (list == NULL) {
 			printf("Errore in handleRequest - gopherListDir\n");
-			return NULL;
-		}
-		printf("Genero la lista dei contenuti di %s\n", gopherOptions.root_path);
-		response = concatList(list, count, '\n');
-		if (response == NULL) {
-			printf("Errore in handleRequest - concatList\n");
-			response = cpyalloc(SERVER_ERROR_MSG);
+			response = (char*) malloc(strlen(EMPTY_FOLDER_MSG) + 1);
+			if (response == NULL) return NULL;
+			*response_sz = strlen(EMPTY_FOLDER_MSG) + 1;
+			strcpy(response, EMPTY_FOLDER_MSG);
+			free(req_path);
+			free(item);
+		} else {
+			response = concatList(list, count, '\n');
+			freeList(list, count);
 		}
 		*response_sz = strlen(response);
-		freeList(list, count);
 
-	} else {
-		printf("Richiesta:\n  %s\n", request);
+	} else if (type == -1) { // NOT FOUND
 
-		int type = -1;
-		char* input_path = (char*) malloc(strlen(gopherOptions.root_path) + strlen(request) + 1);
-		if (input_path == NULL) {
-			printf("Errore in handleRequest - malloc\n");
-			response = cpyalloc(SERVER_ERROR_MSG);
-			return response;
-		}
-		sprintf(input_path, "%s%s", gopherOptions.root_path, request);
+		printf("Il percorso %s non e' valido\n", req_path);
+		response = (char*) malloc(strlen(FILE_NOT_FOUND_MSG) + 1);
+		if (response == NULL) return NULL;
+		strcpy(response, FILE_NOT_FOUND_MSG);
+		*response_sz = strlen(response);
 
-		char* req_path = fixPath(input_path);
-		free(input_path);
-		if (req_path == NULL) {
-			printf("Errore in handleRequest - fixPath\n");
-			response = cpyalloc(SERVER_ERROR_MSG);
-			return response;
-		}
-
-		printf("Percorso: \n  %s\n", req_path);
-
-		char* item = getItem(req_path, &type);
-
-		if (type == 0) { // FILE
-
-			printf("  %s -> file\n", item);
-			size_t file_sz;
-			#ifndef __linux__
-				HANDLE hMap = createMapping(item, cli_data, &file_sz, process_mode);
-				response = readMapping(hMap);
-				*response_sz = file_sz;
-				*mapping = 1;
-			#else
-				response = createAndOpenMapping(item, &file_sz, process_mode);
-
-				*response_sz = file_sz;
-				*mapping = 1;
-			#endif
-
-		} else if (type == 1) { // FOLDER
-
-			printf("  %s -> folder\n", item);
-			printf("Genero la lista dei contenuti di %s\n", item);
-			int count;
-			char** list = gopherListDir(item, &count);
-			if (list == NULL) {
-				printf("Errore in handleRequest - gopherListDir\n");
-				response = cpyalloc(EMPTY_FOLDER_MSG);
-			} else {
-				response = concatList(list, count, '\n');
-				freeList(list, count);
-			}
-			*response_sz = strlen(response);
-
-		} else if (type == -1) { // NOT FOUND
-
-			printf("Il percorso %s non e' valido\n", req_path);
-			response = cpyalloc(FILE_NOT_FOUND_MSG);
-			*response_sz = strlen(response);
-
-		}
-
-		free(req_path);
-		free(item);
 	}
+
+	free(req_path);
+	free(item);
 
 	return response;
 
 }
 
 
-void* sendFile(void* input) {
+void* sendResponse(void* input) {
 	struct SendFileData* sfd = (struct SendFileData*) input;
-	int err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
-	// return (void*) err;
+	printf("IUHASFHUIDUI 1\n");
+	sfd->err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
+	printf("IUHASFHUIDUI 2\n");
+	return NULL;
 }
 
 
@@ -427,16 +431,13 @@ int handler(void* input, int process_mode) {
 
 	int err;
 
-	struct ClientData* cd = (struct ClientData*) input;
-	char* cli_data= cd->data;
-
-	int sock = cd->sock;
+	struct HandlerData* hd = (struct HandlerData*) input;
 
     printf("-----------------------------------------\n");
-    printf("Attendo la richiesta di: %d\n\n", sock);
+    printf("Attendo la richiesta di: %d\n\n", hd->sock);
 
     size_t msg_len;
-    char* msg = recvAll(sock, &msg_len);
+    char* msg = recvAll(hd->sock, &msg_len);
     msg[msg_len-2] = '\0';
 
     printf("Bytes received: %ld\n", msg_len);
@@ -445,40 +446,41 @@ int handler(void* input, int process_mode) {
     char* request = (char*) malloc(strlen(msg) + 1);
     strcpy(request, msg);
 
-    free(msg);
-
     size_t response_sz;
     int file_request = 0;
 
-    char* response = handleRequest(request, &response_sz, &file_request, cli_data, process_mode);
+    char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode);
     if (response == NULL) {
     	printf("Errore in handler - handleRequest\n");
     }
 
 	printf("Invio la risposta al client\n\n");
+    
+	struct SendFileData sfd = {hd->sock, response, response_sz, 0};
 
-	if (file_request != 0) {
-		struct SendFileData sfd = {sock, response, response_sz};
+	if (file_request == 1) {
 
 		#ifndef __linux__
-			HANDLE th = (HANDLE) startThread(sendFile, (void*) &sfd);
+			HANDLE th = (HANDLE) startThread(sendResponse, (void*) &sfd);
 			WaitForSingleObject(th, INFINITE);
 		#else
-			int th = startThread(sendFile, (void*) &sfd);
-			if (th < 0) return -1;
-			if (pthread_join(th, NULL) != 0) return -1;
+			pthread_t th = startThread(sendResponse, (void*) &sfd, 0);
+			if (th < 0 || joinCollect(th) != 0) {
+				freeHandlerDataStruct(hd, process_mode);
+				return -1;
+			}
 		#endif
 
-		char file_sz[11];
+		char file_sz[20];
 		sprintf(file_sz, "%lu", (unsigned long int) response_sz);
 
-		char* pipe_msg = (char*) malloc(strlen(cli_data) + strlen(request) + strlen(file_sz) + 9);
-		sprintf(pipe_msg, "%s %s %s byte\n", cli_data, request, file_sz);
+		char* pipe_msg = (char*) malloc(strlen(hd->cli_data) + strlen(hd->abs_root_path) + strlen(msg) + strlen(file_sz) + 9);
+		sprintf(pipe_msg, "%s %s%s %s byte\n", hd->cli_data, hd->abs_root_path, msg, file_sz);
 
 		#ifndef __linux__
 		 	waitEvent("WRITE_LOG_EVENT");
 		 	err = writePipe("LOGGER_PIPE", pipe_msg);
-		 	if (err < 0) {/* on va bene*/ }
+		 	if (err != 0) {}
 		 	setEvent("READ_LOG_EVENT");
 		#else
 		    pthread_mutex_lock(shared_lock->mutex);
@@ -489,44 +491,47 @@ int handler(void* input, int process_mode) {
 	        *(shared_lock->full) = 1;
 	        pthread_cond_signal(shared_lock->cond2); 
 		    pthread_mutex_unlock(shared_lock->mutex);
-
 		#endif
 
 		free(pipe_msg);
 
 	} else {
-		err = sendAll(sock, response, response_sz);
+		sendResponse((void*) &sfd);
+	}
+
+	if (sfd.err != 0) {
+		log_output("ERROR: could not send response", 0);
 	}
 
 	#ifndef __linux__
-		shutdown(sock, SD_BOTH);
-		closesocket(sock);
+		shutdown(hd->sock, SD_BOTH);
+		closesocket(hd->sock);
 	#else
-		shutdown(sock, SHUT_RDWR);
-		close(sock);
+		shutdown(hd->sock, SHUT_RDWR);
+		close(hd->sock);
 	#endif
 
+	free(msg);
 	free(request);
+
 	if (file_request == 0) {
 		free(response);
 	} else {
 		#ifndef __linux__
-			if (deleteMapping(response) != 0) {
-				printf("Errore in fun - deleteMapping\n");
-				free(cd->data);
-				return -1;
-			}
+			err = deleteMapping(response);
 		#else
-			if (deleteMapping(response, response_sz) != 0) {
-				printf("Errore in fun - deleteMapping\n");
-				free(cd->data);
-				return -1;
-			}
+			err = deleteMapping(response, response_sz);
 		#endif
+		if (err != 0) {
+			printf("Errore in fun - deleteMapping\n");
+			err = -1;
+		}
 	}
 
-	free(cd->data);
-	printf("I handled the request: %d\n\n\n", sock);
+	printf("I handled the request: %d\n\n\n", hd->sock);
+
+	freeHandlerDataStruct(hd, process_mode);
+
 	return 0;
 
 }

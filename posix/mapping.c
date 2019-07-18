@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,9 +28,6 @@ void* createAndOpenMapping(char* path, size_t* size, int process_mode) {
     void* map = mmap(NULL, *size, protection, visibility, fd, 0);
 
     close(fd);
-
-    printf("IUYHASDYHIJUASHYBASFYHBUJK\n");
-    write(1, map, *size);
 
     // UNLOCK
 

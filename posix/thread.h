@@ -7,6 +7,7 @@
 	#include "thread.c"
 	
 	void* threadCollector(void*);
-	pthread_t startThread(void* (*f)(void*), void*);
+	int joinCollect(pthread_t);
+	pthread_t startThread(void* (*f)(void*), void*, int);
 	
 #endif

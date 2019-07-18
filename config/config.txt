@@ -1,4 +1,4 @@
-address:127.0.0.1
-port:7878
-root:root/
-process:0
+address|127.0.0.1
+port|7767
+root|C:/Users/alexf/Desktop/cristaccio/root/
+process|0

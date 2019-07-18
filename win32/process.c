@@ -1,6 +1,6 @@
 #include <windows.h>
-#include "../utils.h"
 #include "../error.h"
+#include "../utils.h"
 
 #define MAX_PROCESS 1024
 
@@ -29,7 +29,7 @@ int processIndex() {
 			return i;
 		}
 	}
-	return NOT_FOUND;
+	return PROCESS_UNAVAILABLE;
 }
 
 //Start a new win32 process
@@ -39,10 +39,7 @@ int startProcess(char* name, int argc, char** args) {
 	if (cmd == NULL) return ALLOC_ERROR;
  	
 	int index = processIndex();
-	if (index < 0){
-		free(cmd);
-		return errorCode(2, PROCESS_UNAVAILABLE, index);
-	} 
+	if (index == -1) return index;
 
 	STARTUPINFO start_info;
     PROCESS_INFORMATION proc_info;
@@ -50,10 +47,7 @@ int startProcess(char* name, int argc, char** args) {
     ZeroMemory(&proc_info, sizeof(proc_info));
     GetStartupInfo(&start_info);
     BOOL success = CreateProcessA(name, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info);
-    if (!success) {
-    	free(cmd);
-    	return PROCESS_ERROR;
-    }
+    if (!success) return PROCESS_ERROR;
     
 	free(cmd);
 	Processes[index].hProcess = proc_info.hProcess;

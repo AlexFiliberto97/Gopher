@@ -39,6 +39,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 		   		
 		   		printf("Quitting server...\n");
 		        SERVER_ALIVE = 0;
+
 		        serverStop();
 		    
 		    } 
@@ -128,7 +129,8 @@ int start_env() {
 	freeList(cmd, argc);
 
 	//Setting default gopher values
-	setDefaultGopherOptions();
+	//setDefaultGopherOptions();
+	//setDefaultServerOptions();
 
 	//Starting garbage collector for threads e processes
 	success = startThread(threadCollector, NULL);
@@ -140,10 +142,10 @@ int start_env() {
 	return 0;
 }
 
-
-
 void clean_env() {
-	// KILL LOGGER
+
+	//destroyDefaultGopherOptions();
+	//destroyDefaultServerOptions();
 	destroyProcess();
 	destroyThreads();
 	destroyPipes();

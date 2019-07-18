@@ -23,14 +23,14 @@ void initPipes() {
 	}
 }
 
-int newPipeIndex() {
+int newpipeIndex() {
 	
 	for (int i = 0; i < MAX_PIPE_NUM; i++) {
 		if (Pipes[i].name == NULL) {
 			return i;
 		}
 	}
-	return NOT_FOUND;
+	return PIPE_UNAVAILABLE;
 }
 
 int pipeIndex(char* name) {
@@ -40,17 +40,20 @@ int pipeIndex(char* name) {
 			return i;
 		}
 	}
-	return NOT_FOUND;
+	return PIPE_UNAVAILABLE;
 }
 
 int createPipe(char *name){
 
-	int counter = newPipeIndex();
-	if (counter < 0) return errorCode(2, PIPE_UNAVAILABLE, counter);
+	int counter = newpipeIndex();
+	if (counter < 0) {
+		throwError(1, counter);
+		return PIPE_ERROR;
+	}
 
 	HANDLE hRead, hWrite;
 	SECURITY_ATTRIBUTES pipeSA = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-	if (CreatePipe(&hRead, &hWrite, &pipeSA, 0) == FALSE) return PIPE_ERROR;
+	if (CreatePipe(&hRead, &hWrite, &pipeSA, 0) == FALSE) return -1;
 
 	Pipes[counter].name = (char*) malloc (strlen(name) +1);
 	strcpy(Pipes[counter].name, name);
@@ -59,30 +62,32 @@ int createPipe(char *name){
 	return 0;
 }
 
-int getReader(char* name) {
+HANDLE getReader(char* name) {
 	
 	for (int i = 0; i < MAX_PIPE_NUM; i++) {
 		if (strcmp(Pipes[i].name, name) == 0) {
-			return (int) Pipes[i].hRead;
+			return Pipes[i].hRead;
 		}
 	}
-	return NOT_FOUND;
+	throwError(1, PIPE_UNAVAILABLE);
+	return NULL;
 }
 
-int getWriter(char* name) {
+HANDLE getWriter(char* name) {
 	
 	for (int i = 0; i < MAX_PIPE_NUM; i++) {
 		if (strcmp(Pipes[i].name, name) == 0) {
-			return (int) Pipes[i].hWrite;
+			return Pipes[i].hWrite;
 		}
 	}
-	return NOT_FOUND;
+	throwError(1, PIPE_UNAVAILABLE);
+	return NULL;
 }
 
 int addPipe(char* name, HANDLE hRead, HANDLE hWrite) {
 
-	DWORD counter = newPipeIndex();
-	if (counter < 0) return errorCode(2, PIPE_UNAVAILABLE, counter);
+	DWORD counter = newpipeIndex();
+	if (counter < 0) return counter;
 
 	Pipes[counter].name = (char*) malloc (strlen(name) +1);
 	strcpy(Pipes[counter].name, name);
@@ -94,18 +99,22 @@ int addPipe(char* name, HANDLE hRead, HANDLE hWrite) {
 int writePipe(char* name, char* msg){
 
 	int index = pipeIndex(name);
-	if (index < 0) return NOT_FOUND;
+	if (index < 0) {
+		throwError(1, index);
+		return WRITE_PIPE;
+	}
 
 	char buffer[PIPE_PACKET_LENGTH];
 	DWORD written, c = 0;
 	BOOL succ;
+	
 	for(int i = 0; i < strlen(msg) + 1; i++){
 		buffer[c++] = msg[i];
 		if (c == PIPE_PACKET_LENGTH || msg[i] == '\0'){
 			succ = WriteFile(Pipes[index].hWrite, buffer, PIPE_PACKET_LENGTH, &written, NULL);
 			c = 0;
 		}
-		if (!succ) return PIPEW_ERROR;
+		if (!succ) return WRITE_PIPE;
 	}
 	return 0;
 }
@@ -113,28 +122,37 @@ int writePipe(char* name, char* msg){
 char* readPipe(char* name) {
 
 	int index = pipeIndex(name);
-	if (index == -1) return NULL;
+	if (index < 0) {
+		throwError(2, READ_PIPE, index);
+		return NULL;
+	}
 
 	char* msg = (char *) malloc(1);
-	if (msg == NULL) return NULL;
-	msg[0] = '\0';
-	
+	if (msg == NULL){
+		throwError(2, READ_PIPE, ALLOC_ERROR);
+		return NULL;
+	}
 
+	msg[0] = '\0';
 	char buf[PIPE_PACKET_LENGTH];
     DWORD bytes_read;
     size_t r_tot = 0;
-
     do {
 
     	BOOL succ = ReadFile(Pipes[index].hRead, buf, PIPE_PACKET_LENGTH, &bytes_read, NULL);
-		if (!succ) return NULL;
+		if (!succ) {
+			throwError(1, READ_PIPE);
+			return NULL;
+		}
 
     	r_tot += bytes_read;
     	msg = (char *) realloc(msg, r_tot);
-    	if (msg == NULL) return NULL;
+    	if (msg == NULL) {
+			throwError(2, READ_PIPE, ALLOC_ERROR);
+			return NULL;
+		}
 		
 		memcpy((void *) &msg[r_tot-bytes_read], (void *) buf, bytes_read);
-    
     } while (memchr(buf, '\0', PIPE_PACKET_LENGTH) == NULL);
 	
 	return msg;

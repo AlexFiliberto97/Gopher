@@ -9,8 +9,8 @@
 	int newpipeIndex();
 	int pipeIndex(char*);
 	int createPipe(char*);
-	int getReader(char*);
-	int getWriter(char*);
+	HANDLE getReader(char*);
+	HANDLE getWriter(char*);
 	int addPipe(char*, HANDLE, HANDLE);
 	int writePipe(char*, char*);
 	char* readPipe(char*);

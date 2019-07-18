@@ -15,7 +15,6 @@
 	#include "win32/thread.h"
 	#include "win32/process.h"
 #else
-	#define _GNU_SOURCE 
 	#include "posix/thread.h"
 	#include "posix/listener.c"
 	#include <unistd.h>
@@ -23,6 +22,7 @@
 	#include <sys/socket.h>
 	#include <netinet/in.h>
 	#include <arpa/inet.h>
+	#include <errno.h>
 #endif
 
 //Prototipes
@@ -49,19 +49,43 @@ struct Opts {
 	int port;
 	int process_mode;
 	char* root_path;
+	char* abs_root_path;
 };
 
 
 //Global variables
-static struct Opts serverOptions = {-1, "127.0.0.1", 7070, 0, "./"}; //Fai la funzione che assegna i valori di default
+static struct Opts serverOptions;
 static int SERV_RUNNING = 1;
+
+
+//Set default server options
+/*
+void setDefaultServerOptions() {
+
+	//Forse vanno allocati con malloc chiedi a giorgio
+	serverOptions.sock = -1;
+	serverOptions.address = "127.0.0.1"; 
+	serverOptions.port = 7070;
+	serverOptions.process_mode = 0;
+}
+*/
+
+void freeServerOptions() {
+	
+	serverOptions.sock = -1;
+	serverOptions.port = -1;
+	serverOptions.process_mode = 0;
+	free(serverOptions.address);
+	free(serverOptions.root_path);
+	free(serverOptions.abs_root_path);
+}
 
 
 //Get server config from command line
 int getOpts(int argc, char** args) {
 
 	int port = -1, process_mode = -1;
-
+	
 	for (int i = 0; i < argc; i++) {
 		if (strcmp(args[i], "-p") == 0 && i < argc -1 && isNumeric(args[i+1]) == 0) {
 			port = atoi(args[i+1]);
@@ -97,7 +121,7 @@ int getConfig() {
 		return ALLOC_ERROR;
 	} 
 
-	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) != 0)) {
+	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) == 0)) {
 		freeDict(config_dict);
 		return BAD_ROOT;
 	}
@@ -124,12 +148,33 @@ int getConfig() {
 	strcpy(serverOptions.address, address_v);
 	serverOptions.port = port;
 	serverOptions.process_mode = process_mode;
-	serverOptions.root_path = (char*) malloc(strlen(root_path_v) + 1);
+	serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
+	if (serverOptions.abs_root_path == NULL) {
+		freeDict(config_dict);
+		return ALLOC_ERROR;
+	}
+
+	strcpy(serverOptions.abs_root_path, root_path_v);
+	int last_occ = lastOccurrence(root_path_v, '/', -1);
+	if (last_occ == -1) {
+		freeDict(config_dict);
+		return -1;
+	}//CHECK LATER
+
+
+	char* rel_root_path = slice(root_path_v, last_occ + 1, strlen(root_path_v));
+	if (rel_root_path == NULL) {
+		freeDict(config_dict);
+		return -1;
+	}//CHECK LATER
+
+	serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
 	if (serverOptions.root_path == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
-	strcpy(serverOptions.root_path, root_path_v);
+	
+	strcpy(serverOptions.root_path, rel_root_path);
 	freeDict(config_dict);
 	return 0;
 }
@@ -137,13 +182,15 @@ int getConfig() {
 //Init the winsock
 int serverInit(int argc, char** args) {
 
+	freeServerOptions();
+
 	int confErr = getConfig();
 	int optsErr = getOpts(argc, args);
-	if(confErr != 0 && optsErr != 0) {
+	if (confErr != 0 && optsErr != 0) {
 		return confErr;
-	}else{
-		if (optsErr != 0) throwError(optsErr);
-		if (confErr != 0) throwError(confErr);
+	} else {
+		if (optsErr != 0) throwError(1, optsErr);
+		if (confErr != 0) throwError(1, confErr);
 	}
 	
 	#ifndef __linux__
@@ -151,12 +198,12 @@ int serverInit(int argc, char** args) {
 		int err	= WSAStartup(514, &wsaData);
 		if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2 || err != 0) {
 			serverCleanup(-1);
-			return errorCode(2, SERVER_ERROR_S, WSA_ERROR);
+			throwError(1, SERVER_ERROR_S);
+			return WSA_ERROR;
 		}
-		return 0;
-	#else
-		return 0;
 	#endif
+
+	return 0;
 }
 
 //Start the server
@@ -166,25 +213,26 @@ int serverStart() {
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == -1) { 
 		serverCleanup(sock);
-		return errorCode(2, SERVER_ERROR_S, SOCK_ERROR); 
+		throwError(1, SERVER_ERROR_S); 
+		return SOCK_ERROR;
 	}
 
 	#ifndef __linux__
 		BOOL optval = TRUE;
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &optval, sizeof(int));
-		if (err < 0) {
-			serverCleanup(sock);
-			return errorCode(2, SERVER_ERROR_S, SOCK_ERROR); 
-		}
 	#else
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
-		if (err < 0) {
-			serverCleanup(sock);
-			return errorCode(2, SERVER_ERROR_S, SOCK_ERROR); 
-		}
+		
 	#endif
 
-	setGopherOptions(serverOptions.address, &serverOptions.port ,serverOptions.root_path);
+	if (err < 0) {
+		serverCleanup(sock);
+		throwError(1, SERVER_ERROR_S); 
+		return SOCK_ERROR; 
+	}
+
+	//setGopherOptions(serverOptions.address, &serverOptions.port ,serverOptions.root_path);
+	
 	struct sockaddr_in service;
 	service.sin_family = AF_INET;
 	service.sin_addr.s_addr = inet_addr(serverOptions.address);
@@ -192,11 +240,13 @@ int serverStart() {
 	err = bind(sock, (struct sockaddr*) &service, sizeof(service));
 	if (err == -1) {
 		serverCleanup(sock);
-		return errorCode(2, SERVER_ERROR_S, BIND_ERROR); 
+		throwError(1, SERVER_ERROR_S); 
+		return BIND_ERROR;
 	}
 	serverOptions.sock = sock;
 	return 0;
 }
+
 
 //Handle the incoming requests
 int serverService() {
@@ -204,24 +254,34 @@ int serverService() {
 	int err = listen(serverOptions.sock, 10);
 	if (err == -1) {
 		serverCleanup(serverOptions.sock);
-		return errorCode(2, SERVER_ERROR_S, LISTEN_ERROR); 
+		throwError(1, SERVER_ERROR_S); 
+		return LISTEN_ERROR;
 	} 
 
-	fd_set readSet;
-	struct timeval timeout = {1, 0};
+	//fd_set readSet;
+	//struct timeval timeout = {1, 0};
 	printf("Server listening on port: %d\n", serverOptions.port);
 
 	while (SERV_RUNNING == 1) {
 
+		//printf("eanfjajkfaejkn 1 \n");
+		fd_set readSet;
 		FD_ZERO(&readSet);
 		FD_SET(serverOptions.sock, &readSet);
+		struct timeval timeout = {2, 0};
+		//printf("eanfjajkfaejkn 2 \n");
 
 		err = select(serverOptions.sock + 1, &readSet, NULL, NULL, &timeout);
+		//printf("eanfjajkfaejkn 3 \n");
 		if (err == -1) {
+			#ifdef __linux__
+				if (errno == 4) continue;
+			#endif
 			serverCleanup(serverOptions.sock);
-			throwError(errorCode(2, SERVER_ERROR_H, SELECT_ERROR));
+			throwError(2, SERVER_ERROR_H, SELECT_ERROR);
 			continue;
 		}
+		
 
 		if (FD_ISSET(serverOptions.sock, &readSet) == 0) continue;
 		
@@ -229,85 +289,95 @@ int serverService() {
 		int cli_addr_len = sizeof(cli_addr);		
 		int acceptSocket = accept(serverOptions.sock, (struct sockaddr*) &cli_addr, (socklen_t*) &cli_addr_len);
 		if (acceptSocket == -1) {
-			throwError(errorCode(2, SERVER_ERROR_H, ACCEPT_ERROR));
+			throwError(2, SERVER_ERROR_H, ACCEPT_ERROR);
 			continue;
 		}
+
+		
 		
 		char* cli_data = getClientAddress(cli_addr);
 		if (cli_data == NULL) {
-			throwError(errorCode(2, SERVER_ERROR_H, ALLOC_ERROR));
+			throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 			continue; 
 		}
 
+		
 		if (serverOptions.process_mode == 0) {
 
-			struct ClientData cd;
-			cd.sock = acceptSocket;
-			cd.data = cli_data;
-			int th = startThread((void*) handler, (void*) &cd);
-			if (th < 0) {
-				throwError(errorCode(2, SERVER_ERROR_H, th));
-				continue;
-			}
+			
+			struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
+			hd->cli_data = (char*) malloc(strlen(cli_data) + 1);
+			hd->address = (char*) malloc(strlen(serverOptions.address) + 1);
+			hd->root_path = (char*) malloc(strlen(serverOptions.root_path) + 1);
+			hd->abs_root_path = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
+			strcpy(hd->cli_data, cli_data);
+			strcpy(hd->address, serverOptions.address);
+			strcpy(hd->root_path, serverOptions.root_path);
+			strcpy(hd->abs_root_path, serverOptions.abs_root_path);
+			hd->sock = acceptSocket;
+			hd->port = serverOptions.port;
+		
+			#ifndef __linux__
+			
+				int th = startThread((void*) handler, (void*) hd);
+				if (th < 0) {
+					//printf("Errore nell'avvio del thread handler\n");
+					continue;
+				}
+			#else
+				pthread_t th = startThread((void*) handler, (void*) hd, 1);
+				if (th < 0) {
+					//printf("Errore nell'avvio del thread handler\n");
+					continue;
+				}
+			#endif
+
 		} else {
 
-			int argc = 3, arg_i = 0, arg_s = 0;
-			char** cmd = (char**) malloc(sizeof(char*) * argc);
-			if (cmd == NULL) {
-				throwError(errorCode(2, SERVER_ERROR_H, ALLOC_ERROR));
-				continue;
-			}
-			
 			#ifndef __linux__
-				argc += 5;
-				cmd = (char**) realloc(cmd, argc);
-				if (cmd == NULL) {
-					throwError(errorCode(2, SERVER_ERROR_H, ALLOC_ERROR));
-					continue;
-				}
+				int argc = 8;
+				char** cmd = (char**) malloc(sizeof(char*) * 8);
+	   			cmd[0] = (char*) malloc(11);
+	   			cmd[1] = (char*) malloc(11);
+	   			cmd[2] = (char*) malloc(11);
+	   			cmd[3] = (char*) malloc(11);
+	   			cmd[4] = (char*) malloc(strlen(cli_data) + 1);
+	   			cmd[5] = (char*) malloc(strlen(serverOptions.address) + 1);
+	   			cmd[6] = (char*) malloc(11);
+	   			cmd[7] = (char*) malloc(strlen(serverOptions.root_path) + 1);
+	   			cmd[8] = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
 
-				cmd[arg_i++] = (char*) malloc(11);
-				cmd[arg_i++] = (char*) malloc(11);
-				cmd[arg_i++] = (char*) malloc(11);
-				cmd[arg_i++] = (char*) malloc(strlen(serverOptions.address) + 1);
-				cmd[arg_i++] = (char*) malloc(11);
-				err = checkMalloc(cmd, arg_i);
-				if (err == ALLOC_ERROR) {
-					freeList(cmd, arg_i);
-					throwError(errorCode(2, SERVER_ERROR_H, ALLOC_ERROR));
-					continue;
-				}
-				sprintf(cmd[arg_s++], "%d", getWriter("LOGGER_PIPE"));
-				sprintf(cmd[arg_s++], "%d", eventHandler("WRITE_LOG_EVENT"));
-				sprintf(cmd[arg_s++], "%d", eventHandler("READ_LOG_EVENT"));
-				sprintf(cmd[arg_s++], "%s", serverOptions.address);
-				sprintf(cmd[arg_s++], "%d", serverOptions.port);
-			#endif
-			
-			cmd[arg_i++] = (char*) malloc(11);
-			cmd[arg_i++] = (char*) malloc(strlen(cli_data) + 1);
-			cmd[arg_i++] = (char*) malloc(strlen(serverOptions.root_path) + 1);
-			err = checkMalloc(cmd, arg_i);
-	   		if (err == ALLOC_ERROR) {
-	   			freeList(cmd, arg_i);
-	   			throwError(errorCode(2, SERVER_ERROR_H, ALLOC_ERROR));
-	   			continue;
-	   		}
-			sprintf(cmd[arg_s++], "%d", acceptSocket);
-			sprintf(cmd[arg_s++], "%s", cli_data);
-			sprintf(cmd[arg_s++], "%s", serverOptions.root_path);
-
-			#ifndef __linux__
-				err = startProcess("win32/listener.exe", argc, cmd);
+	   			sprintf(cmd[0], "%d", acceptSocket);
+	   			sprintf(cmd[1], "%d", getWriter("LOGGER_PIPE"));
+	   			sprintf(cmd[2], "%d", eventHandler("WRITE_LOG_EVENT"));
+	   			sprintf(cmd[3], "%d", eventHandler("READ_LOG_EVENT"));
+	   			sprintf(cmd[4], "%s", cli_data);
+	   			sprintf(cmd[5], "%s", serverOptions.address);
+	   			sprintf(cmd[6], "%d", serverOptions.port);
+	   			sprintf(cmd[7], "%s", serverOptions.root_path);
+	   			sprintf(cmd[8], "%s", serverOptions.abs_root_path);
+				err = startProcess("win32/listener.exe", 9, cmd);
+				freeList(cmd, 9);
 			#else
-				err = startProcess((void*) listener, 3, cmd);
+				struct HandlerData* hd = (struct HandlerData*) create_shared_memory(sizeof(struct HandlerData));
+				hd->cli_data = (char*) create_shared_memory(strlen(cli_data) + 1);
+				hd->address = (char*) create_shared_memory(strlen(serverOptions.address) + 1);
+				hd->root_path = (char*) create_shared_memory(strlen(serverOptions.root_path) + 1);
+				hd->abs_root_path = (char*) create_shared_memory(strlen(serverOptions.abs_root_path) + 1);
+				strcpy(hd->cli_data, cli_data);
+				strcpy(hd->address, serverOptions.address);
+				strcpy(hd->root_path, serverOptions.root_path);
+				strcpy(hd->abs_root_path, serverOptions.abs_root_path);
+				hd->sock = acceptSocket;
+				hd->port = serverOptions.port;
+				err = startProcess((void*) listener, 1, (void*) hd);
 			#endif
 
 			if (err < 0) {
-				throwError(errorCode(2, SERVER_ERROR_H, err));
+				throwError(2, SERVER_ERROR_H, err);
 				continue;
 			}
-			freeList(cmd, argc);
+
 		}
 	}
 	SERV_RUNNING = 1;
@@ -324,14 +394,19 @@ int serverReload() {
 		err	= WSAStartup(514, &wsaData);
 		if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2 || err != 0) {
 			serverCleanup(-1);
-			return errorCode(2, SERVER_ERROR_R, WSA_ERROR);
+			throwError(1, SERVER_ERROR_R);
+			return WSA_ERROR;
 		}
 	#endif
 
 	err = getConfig();
-	if (err != 0) return errorCode(2, SERVER_ERROR_R, err);
+	if (err != 0) {
+		throwError(1, SERVER_ERROR_R);
+		return err;
+	}
 	return 0;
 }
+
 
 //Clean the server
 void serverCleanup(int sock) {
@@ -346,6 +421,5 @@ void serverCleanup(int sock) {
 
 //Stop and destroy the server
 void serverStop() {
-
 	SERV_RUNNING = 0;
 }

@@ -1,10 +1,11 @@
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MAX_PROCESS 1024
 
@@ -16,6 +17,14 @@ struct Process {
 
 
 static struct Process Processes[MAX_PROCESS];
+
+
+void initProcess() {
+	for (int i = 0; i < MAX_PROCESS; i++) {
+		Processes[i].running = 0;
+		Processes[i].pid = -1;
+	}
+}
 
 
 int processIndex() {
@@ -41,14 +50,18 @@ int startProcess(void* (*f)(void*), int argc, char** argv) {
 	if (pid < 0) {
 		perror("Errore in fork()\n");
 		return -1;
-	} else if (pid == 0) {
-		// PROCESSO FIGLIO
-		f((void*) argv);
-		exit(0);
-	} else {
+	} else if (pid > 0) {
 		Processes[index].pid = pid;
 		Processes[index].running = 1;
+		return pid;
 	}
+
+	signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
+    
+	f((void*) argv);
+	exit(0);
 
 	return pid;
 
@@ -66,6 +79,16 @@ void* processCollector(void* input) {
 				printf("Process with id %d is now collected\n", i);
 			}
 		}
-		usleep(500000);
+	}
+}
+
+
+//Destroy the process environment
+void destroyProcess() {
+	for (int i = 0; i < MAX_PROCESS; i++) {
+		if (Processes[i].pid != -1) {
+			kill(Processes[i].pid, SIGKILL);
+			Processes[i].pid = -1;
+		}
 	}
 }

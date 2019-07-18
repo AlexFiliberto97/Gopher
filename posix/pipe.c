@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -111,7 +111,7 @@ char* readPipe(char* name){
 
 	close(Pipes[index].handles[1]);
 
-	char buffer[PIPE_PACKET_LENGTH];
+	char buffer[PIPE_PACKET_LENGTH+1];
 	char* msg = (char*) malloc(1);
 	msg[0] = '\0';
 	int counter = 0, r = 0;
@@ -121,10 +121,12 @@ char* readPipe(char* name){
 
 		int r = read(Pipes[index].handles[0], buffer, PIPE_PACKET_LENGTH);
     	if (r < 0) return NULL;
-    	
+
     	endchar = memchr(buffer, '\0', PIPE_PACKET_LENGTH);
+    	buffer[PIPE_PACKET_LENGTH] = '\0';
 		msg = (char *) realloc(msg, ++counter * PIPE_PACKET_LENGTH);
     	strcat(msg, buffer);
+
 
 	} while (endchar == NULL);
 
@@ -132,4 +134,17 @@ char* readPipe(char* name){
 
 	return msg;
 
+}
+
+
+void destroyPipes() {
+	for (int i = 0; i < MAX_PIPE_NUM; i++) {
+		if (Pipes[i].name != NULL) {
+			free(Pipes[i].name);
+			close(Pipes[i].handles[0]);
+			close(Pipes[i].handles[1]);
+			Pipes[i].handles[0] = -1;
+			Pipes[i].handles[1] = -1;
+		}
+	}
 }

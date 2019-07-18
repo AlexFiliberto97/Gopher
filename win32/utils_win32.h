@@ -5,6 +5,8 @@
 	#include <stdio.h>
 	#include "utils_win32.c"
 
+	BOOL WINAPI CtrlHandler(DWORD);
+	int setKeyboardEvent();
 	int countDirElements(char*) ;
 	char* readFile(char*);
 	char** listDir(char*, int*);

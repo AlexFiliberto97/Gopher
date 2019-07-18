@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,66 +11,43 @@
 #include "logger.h"
 
 
+int SERVER_ALIVE = 0;
+
+
+void init_env() {
+	SERVER_ALIVE = 1;
+	initPipes();
+	initThread();
+	initProcess();
+}
+
+
 //Initialize the environment
 int start_env(){
 
 	int err;
 
-	initPipes();
+	// initPipes();
 
-	err = createPipe("LOGGER_PIPE");
-	if(err != 0) return -1; //Error: creating Pipes
+	int success = createPipe("LOGGER_PIPE");
+	if (success == -1) return -1;
 
 	err = initLocking();
 
-	// int pid = startProcess(logger, 0, NULL);
-	// if (pid < 0) return -1;
+	int pid = startProcess(logger, 0, NULL);
+	if (pid < 0) return -1;
 
 	//Creating the garbage collector for threads e processes
-	startThread(threadCollector, NULL);
-	// startThread(processCollector, NULL);
+	startThread(threadCollector, NULL, 1);
+	startThread(processCollector, NULL, 1);
 
 	return 0;
 }
 
-// void* foo(void* input) { 
-
-// 	pthread_mutex_lock(shared_lock->mutex);
-
-// 		while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
-
-// 	    writePipe("LOGGER_PIPE", "Dio sborra.\n");
-
-// 	    *(shared_lock->full) = 1;
-
-//         pthread_cond_signal(shared_lock->cond2); 
-
-//     pthread_mutex_unlock(shared_lock->mutex);
-
-
-//     return NULL; 
-// } 
-
-
-// int main() {
-
-// 	int err;
-
-// 	err = initLocking();
-// 	if (err != 0) return -1;
-
-// 	createPipe("LOGGER_PIPE");
-
-// 	int pid = startProcess(logger, 0, NULL);
-
-// 	for (int i = 0; i < 10; i++) {
-//         startProcess(foo, 0, NULL); 
-//     }
-
-// 	sleep(2);
-
-// 	kill(pid, SIGKILL);
-
-// 	return 0;
-
-// }
+int clean_env() {
+	// KILL LOGGER
+	destroyProcess();
+	destroyThreads();
+	destroyPipes();
+	return 0;
+}

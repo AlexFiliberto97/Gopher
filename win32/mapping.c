@@ -10,9 +10,12 @@ HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) 
 	BOOL succ;
 
 	hFile = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) return NULL;
+	if (hFile == INVALID_HANDLE_VALUE) {
+		throwError(1, INVALID_HANDLE);
+		return NULL;
+	}
 
-	*size = GetFileSize(hFile, NULL); 
+	*size = GetFileSize(hFile, NULL);
 	OVERLAPPED overlapped = {0};
 	succ = LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK, 0, *size, 0, &overlapped);
 	if (!succ) {
@@ -20,7 +23,7 @@ HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) 
 		return NULL;
 	}
 
-	hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0,mapName );
+	hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, mapName);
 	if (hMap == NULL) {
 		CloseHandle(hFile);
 		return NULL;
@@ -42,6 +45,7 @@ HANDLE openMapping(char *mapName) {
 	HANDLE hMap;
 	hMap = OpenFileMapping(FILE_MAP_READ, TRUE, mapName);
 	if (hMap == NULL) return NULL;
+
 	return hMap;
 }
 
@@ -51,6 +55,7 @@ char* readMapping(HANDLE hMap) {
 	char *pMap;
 	pMap = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 	if (pMap == NULL) return NULL;
+	
 	return pMap;
 }
 

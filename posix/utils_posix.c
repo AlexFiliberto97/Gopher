@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,7 +26,19 @@ int isRegularFile(const char* path) {
 
 
 int existsDir(char* path) {
+	// char npath[strlen(path)+4];
+	// sprintf(npath, "../%s", path);
 	if (isDirectory(path) == 0) {
+		return 0;
+	}
+	return 1;
+}
+
+
+int existsFile(char* path) {
+	// char npath[strlen(path)+4];
+	// sprintf(npath, "../%s", path);
+	if (isRegularFile(path) == 0) {
 		return 0;
 	}
 	return 1;
@@ -183,6 +195,8 @@ char* readFile(char* path, size_t* size) {
 
 	buf[sz] = '\0';
 
+	// return buf;
+
 	char *data = (char *) malloc(sz + 1);
 
 	int idx = 0;
@@ -214,4 +228,15 @@ void* create_shared_memory(size_t size) {
     // The remaining parameters to `mmap()` are not important for this use case,
     // but the manpage for `mmap` explains their purpose.
     return mmap(NULL, size, protection, visibility, -1, 0);
+}
+
+
+int free_shared_memory(void* map, size_t size) {
+
+	int err = munmap(map, size);
+
+	if (err != 0) return -1;
+
+	return 0;
+
 }

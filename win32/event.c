@@ -4,7 +4,8 @@
 
 #define MAX_EVENTS 10
 
-struct Event{
+struct Event {
+	
 	char* name;
 	HANDLE hEvent;
 };
@@ -26,7 +27,7 @@ DWORD newEventIndex() {
 			return i;
 		}
 	}
-	return NOT_FOUND;
+	return EVENT_UNAVAILABLE;
 }	
 
 HANDLE eventHandler(char* name) {
@@ -42,40 +43,42 @@ HANDLE eventHandler(char* name) {
 BOOL setEvent(char* name) {
 
 	HANDLE event = eventHandler(name);
-	if(event == NULL) return FALSE;
+	if(event == NULL) return EVENT_UNAVAILABLE;
 
 	BOOL succ = SetEvent(event);
-	if(!succ) return FALSE;
+	if(!succ) return SET_EVENT;
 
-	return TRUE;
+	return 0;
 }
 
 int createEvent(char* name, BOOL pulse) {
 
 	DWORD index = newEventIndex();
+	if (index < 0) return index;
+	
 	SECURITY_ATTRIBUTES eventSA = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
-	if (index == -1) return EVENT_UNAVAILABLE;
-
     HANDLE event = CreateEvent(&eventSA, FALSE, pulse, NULL); 
-    if (event == NULL) return EVENT_ERROR;
+    if (event == NULL) return CREATE_EVENT;
 
     Events[index].name = (char*) malloc(strlen(name));
-    if (Events[index].name == NULL) return -1;
+    if (Events[index].name == NULL) return ALLOC_ERROR;
+
     strcpy(Events[index].name, name);
    	Events[index].hEvent = event;
    	return 0;
 }
 
-BOOL addEvent(char* name, HANDLE hEvent) {
+int addEvent(char* name, HANDLE hEvent) {
 
 	DWORD index = newEventIndex();
-	if (index == -1) return FALSE;
+	if (index == -1) return index;
 
 	Events[index].name = (char*) malloc(strlen(name));
-	if (Events[index].name == NULL) return FALSE;
+	if (Events[index].name == NULL) return ALLOC_ERROR;
+    
     strcpy(Events[index].name, name);
 	Events[index].hEvent = hEvent;
-	return TRUE;
+	return 0;
 }
 
 void waitEvent(char* name) {

@@ -11,7 +11,6 @@ struct Thread {
 
 static struct Thread Threads[MAX_THREADS];
 
-//Init threads environment
 void initThread() {
 
 	for (int i = 0; i < MAX_THREADS; i++) {
@@ -20,7 +19,6 @@ void initThread() {
 	}
 }
 
-//Start a new thread
 int startThread(void* (*f)(void *), void* data){
 
 	for (int i = 0; i < MAX_THREADS; i++) {
@@ -34,10 +32,9 @@ int startThread(void* (*f)(void *), void* data){
 			}
 		}
 	}
-	return errorCode(2, THREAD_ERROR, THREAD_UNAVAILABLE);
+	return THREAD_UNAVAILABLE;
 }
 
-//Check if  athread is ended
 int threadIsEnded(HANDLE hThread) {
 
 	DWORD status;
@@ -51,7 +48,6 @@ int threadIsEnded(HANDLE hThread) {
 	}
 }
 
-//Collect running threads
 void* threadCollector(void *input) {
 
 	while (TRUE) {
@@ -65,7 +61,7 @@ void* threadCollector(void *input) {
 	}	
 }
 
-//Destroy threads
+
 void destroyThreads() {
 
 	for(int i = 0; i < MAX_THREADS; i++) {
