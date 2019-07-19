@@ -127,12 +127,13 @@
 #endif
 
 
+/*
 void* testfunction(void* input) {
     sleep(5);
     sigint_handler(1);
     sleep(1);
 }
-
+*/
 
 int main(int argc, char** argv) {
 
@@ -149,7 +150,7 @@ int main(int argc, char** argv) {
  //    #endif
 
 
-    pthread_t th = startThread(testfunction, NULL, 0);
+    //pthread_t th = startThread(testfunction, NULL, 0);
 
 	init_env();
 	
@@ -183,17 +184,11 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 	}
-
-
-	// #ifdef __linux__
- //        closelog();
- //    #endif
-
 	clean_env();
 
-    printf("AAAAAAAAAAAAAAAAaaaa\n");
+    //printf("AAAAAAAAAAAAAAAAaaaa\n");
 
-    joinCollect(th);
+    //joinCollect(th);
 
 	return 0;
 

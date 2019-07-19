@@ -11,12 +11,13 @@ void throwError(int num, ...) {
    	//errCode[0] = '\0';
    	//int index = 0, errNum = num;
 
-   	log_output(">>> Error:", 0);
+   	printf(">>> Error:");
 
    	for (int i = 0; i < num; i++) {
 
-   		log_output(" %d ", va_arg(valist, int));
+   		printf(" %d ", va_arg(valist, int));
 
+         //printf("");
    	}
 
 	printf("\n");

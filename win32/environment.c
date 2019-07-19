@@ -128,10 +128,6 @@ int start_env() {
 	} 
 	freeList(cmd, argc);
 
-	//Setting default gopher values
-	//setDefaultGopherOptions();
-	//setDefaultServerOptions();
-
 	//Starting garbage collector for threads e processes
 	success = startThread(threadCollector, NULL);
 	if (success < 0) return success;
