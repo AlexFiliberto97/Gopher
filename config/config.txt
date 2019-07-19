@@ -1,4 +1,4 @@
 address|127.0.0.1
 port|7070
 root|/home/giorgio/Programming/SoIIProject/root/
-process|1
+process|0

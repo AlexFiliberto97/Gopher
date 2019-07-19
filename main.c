@@ -21,7 +21,7 @@
         log_output("Sighup detected", 0);
         log_output("Reloading server...", 0);
         serverStop();
-        serverReload();
+        // serverReload();
     }
 
     void sigint_handler(int s) {
@@ -89,8 +89,11 @@
         int err;
 
         err = setSighupEvent();
-        err += setSigintEvent();
-
+        if (err != 0) {
+            printf("\nERROR: could not set control handler\n");
+            return -1;
+        }
+        err = setSigintEvent();
         if (err != 0) {
             printf("\nERROR: could not set control handler\n");
             return -1;
@@ -118,7 +121,7 @@
 
         // Open the log file
         openlog("gopher-server", LOG_PID | LOG_CONS, LOG_USER);
-        syslog(LOG_INFO, "%s", "-------------------------------------");
+        syslog(LOG_INFO, "%s", "-----------------------");
 
         return 0;
 
@@ -138,17 +141,18 @@ int main(int argc, char** argv) {
 
 	int err;
 
-	// #ifndef __linux__
-	// 	SetCurrentDirectory("C:");
- //   	#else
- //        err = daemon_skeleton();
- //        if (err != 0) {
- //            log_output("ERROR: daemon\n", 0);
- //            exit(1);
- //        }
- //    #endif
+	#ifndef __linux__
+		SetCurrentDirectory("C:");
+   	#else
+        err = daemon_skeleton();
 
-    pthread_t th = startThread(testfunction, NULL, 0);
+        if (err != 0) {
+            log_output("ERROR: daemon\n", 0);
+            exit(1);
+        }
+    #endif
+
+    // pthread_t th = startThread(testfunction, NULL, 0);
 
 	init_env();
 	
@@ -157,15 +161,16 @@ int main(int argc, char** argv) {
 		throwError(2, err, -1);
 		return -1;
 	}
-
-	err = serverInit(argc, argv);
-	if (err != 0) {
-		clean_env();
-		throwError(2, err, -1);
-		return -1;
-	}
+	
 
 	while (SERVER_ALIVE == 1) {
+
+        err = serverInit(argc, argv);
+    	if (err != 0) {
+    		clean_env();
+    		throwError(2, err, -1);
+    		return -1;
+    	}
 
 		err = serverStart();
 		if (err != 0) {
@@ -181,16 +186,16 @@ int main(int argc, char** argv) {
 			throwError(2, err, -1);
 			return -1;
 		}
+		
 	}
 
-
-	// #ifdef __linux__
- //        closelog();
- //    #endif
+	#ifdef __linux__
+        closelog();
+    #endif
 
 	clean_env();
 
-    joinCollect(th);
+    // joinCollect(th);
 
 	return 0;
 

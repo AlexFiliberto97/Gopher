@@ -53,6 +53,7 @@ int start_env(){
 int clean_env() {
 	kill(LOGGER_PID, SIGKILL);
 	destroySharedLock();
+	freeServerOptions();
 	stopProcessCollector();
 	destroyProcess();
 	stopThreadCollector();

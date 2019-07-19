@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,8 +31,6 @@ struct Pipe* createLoggerPipe() {
 
 int writePipe(struct Pipe* pipe, char* msg) {
 
-	close(pipe->handles[0]);
-
 	char sz[11];
 	sprintf(sz, "%d", (int) strlen(msg) + 1);
 
@@ -64,8 +61,6 @@ int writePipe(struct Pipe* pipe, char* msg) {
 
 
 char* readPipe(struct Pipe* pipe){
-
-	close(pipe->handles[1]);
 
 	int r; 
 
