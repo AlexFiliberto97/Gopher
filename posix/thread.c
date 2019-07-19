@@ -79,6 +79,8 @@ pthread_t startThread(void* (*f)(void*), void* data, int collect) {
 
 void destroyThreads() {
 	for (int i = 0; i < MAX_THREADS; i++) {
-		pthread_cancel(Threads[i].Th);
+		if (Threads[i].running == 1) {
+			pthread_cancel(Threads[i].Th);
+		}
 	}
 }

@@ -103,14 +103,14 @@ int getOpts(int argc, char** args) {
 int getConfig() {
 
 	int config_count;
-	char **config_assoc_list;
+	char** config_assoc_list;
 	config_assoc_list = readlines(CONFIG_FILE_PATH, &config_count);
 	if (config_assoc_list == NULL) return ALLOC_ERROR;
 	
 	struct Dict config_dict = buildDict(config_assoc_list, config_count);
 	if (config_dict.err != 0) return ALLOC_ERROR;
-
 	freeList(config_assoc_list, config_count);
+
 	char* address_v = getAssocValue("address", config_dict);
 	char* port_v = getAssocValue("port", config_dict);
 	char* process_mode_v = getAssocValue("process", config_dict);
@@ -175,6 +175,7 @@ int getConfig() {
 	}
 	
 	strcpy(serverOptions.root_path, rel_root_path);
+	free(rel_root_path);
 	freeDict(config_dict);
 	return 0;
 }
@@ -182,7 +183,7 @@ int getConfig() {
 //Init the winsock
 int serverInit(int argc, char** args) {
 
-	freeServerOptions();
+	// freeServerOptions();
 
 	int confErr = getConfig();
 	int optsErr = getOpts(argc, args);
@@ -410,7 +411,7 @@ int serverReload() {
 
 //Clean the server
 void serverCleanup(int sock) {
-
+	freeServerOptions();
 	#ifndef __linux__
 		closesocket(sock);
 		WSACleanup();

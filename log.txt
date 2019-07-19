@@ -166,3 +166,5 @@
 127.0.0.1:34012 C:/Users/alexf/Desktop/cristaccio/root/imgs/alex.jpg 56523 byte
 127.0.0.1:34524 C:/Users/alexf/Desktop/cristaccio/root/imgs/alex.jpg 56523 byte
 127.0.0.1:35036 C:/Users/alexf/Desktop/cristaccio/root/imgs/alex.jpg 56523 byte
+10.90.89.230:30377 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+10.90.89.230:30889 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte

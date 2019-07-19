@@ -79,7 +79,7 @@ int getFileSize(FILE *fp) {
 */
 char* slice(char *text, int lo, int hi) {
 
-	char *sliced = (char *) malloc(hi - lo + 1);
+	char* sliced = (char *) malloc(hi - lo + 1);
 
 	if (sliced == NULL) {
 		printf("Errore in slice - malloc\n");
@@ -308,6 +308,7 @@ struct Dict buildDict(char** list, int length) {
 			keys[i] = line[0];
 			values[i] = line[1];
 		}
+		free(line);
 	}
 
 	dict.keys = keys;

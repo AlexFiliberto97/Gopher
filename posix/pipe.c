@@ -64,7 +64,9 @@ int createPipe(char* name){
 		return -1;
 	}
 
-	Pipes[index].name = name;
+	Pipes[index].name = (char*) malloc(strlen(name) + 1);
+	strcpy(Pipes[index].name, name);
+
 
 	return 0;
 

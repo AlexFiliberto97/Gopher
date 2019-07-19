@@ -8,7 +8,10 @@
 #ifndef __linux__
 	#include "win32/environment.h"
 #else
+    #include <unistd.h>
 	#include "posix/environment.h"
+    #include <pthread.h>
+    #include "posix/thread.h"
 #endif
 
 
@@ -124,6 +127,13 @@
 #endif
 
 
+void* testfunction(void* input) {
+    sleep(5);
+    sigint_handler(1);
+    sleep(1);
+}
+
+
 int main(int argc, char** argv) {
 
 	int err;
@@ -137,6 +147,9 @@ int main(int argc, char** argv) {
  //            exit(1);
  //        }
  //    #endif
+
+
+    pthread_t th = startThread(testfunction, NULL, 0);
 
 	init_env();
 	
@@ -171,11 +184,16 @@ int main(int argc, char** argv) {
 		}
 	}
 
+
 	// #ifdef __linux__
  //        closelog();
  //    #endif
 
 	clean_env();
+
+    printf("AAAAAAAAAAAAAAAAaaaa\n");
+
+    joinCollect(th);
 
 	return 0;
 
