@@ -31,7 +31,7 @@
 	#define FOLDER_NOT_FOUND -111
 	#define FILE_NOT_FOUND -3333
 	#define WRITE_FILE_ERROR -2782
-	#define SEND_ERROR -999
+	//#define SEND_ERROR -999
 
 	#define THREAD_UNAVAILABLE -111
 	#define THREAD_ERROR -112
@@ -53,5 +53,9 @@
 	
 	#define PROCESS_UNAVAILABLE -9090
 	#define PROCESS_ERROR -38873
+
+	#define CLIENT_DATA -2872
+	#define RECV_ERROR -9069
+	#define SEND_ERROR -9090
 
 #endif

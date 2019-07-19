@@ -146,6 +146,9 @@ int getConfig() {
 	}
 	
 	strcpy(serverOptions.address, address_v);
+	
+	printf("address::: %s  %s\n",serverOptions.address,  address_v);
+
 	serverOptions.port = port;
 	serverOptions.process_mode = process_mode;
 	serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
@@ -232,8 +235,6 @@ int serverStart() {
 		return SOCK_ERROR; 
 	}
 
-	//setGopherOptions(serverOptions.address, &serverOptions.port ,serverOptions.root_path);
-	
 	struct sockaddr_in service;
 	service.sin_family = AF_INET;
 	service.sin_addr.s_addr = inet_addr(serverOptions.address);
@@ -259,38 +260,30 @@ int serverService() {
 		return LISTEN_ERROR;
 	} 
 
-	//fd_set readSet;
-	//struct timeval timeout = {1, 0};
 	printf("Server listening on port: %d\n", serverOptions.port);
-
 	while (SERV_RUNNING == 1) {
 
-		//printf("eanfjajkfaejkn 1 \n");
 		fd_set readSet;
 		FD_ZERO(&readSet);
 		FD_SET(serverOptions.sock, &readSet);
 		struct timeval timeout = {2, 0};
-		//printf("eanfjajkfaejkn 2 \n");
-
+		
 		err = select(serverOptions.sock + 1, &readSet, NULL, NULL, &timeout);
-		//printf("eanfjajkfaejkn 3 \n");
 		if (err == -1) {
 			#ifdef __linux__
 				if (errno == 4) continue;
 			#endif
 			serverCleanup(serverOptions.sock);
-			throwError(2, SERVER_ERROR_H, SELECT_ERROR);
+			throwError(3, SERVER_ERROR_H, SELECT_ERROR, -1);
 			continue;
 		}
 		
-
 		if (FD_ISSET(serverOptions.sock, &readSet) == 0) continue;
-		
 		struct sockaddr_in cli_addr  = {0};
 		int cli_addr_len = sizeof(cli_addr);		
 		int acceptSocket = accept(serverOptions.sock, (struct sockaddr*) &cli_addr, (socklen_t*) &cli_addr_len);
 		if (acceptSocket == -1) {
-			throwError(2, SERVER_ERROR_H, ACCEPT_ERROR);
+			throwError(3, SERVER_ERROR_H, ACCEPT_ERROR, -1);
 			continue;
 		}
 		
@@ -299,7 +292,6 @@ int serverService() {
 			throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 			continue; 
 		}
-
 		
 		if (serverOptions.process_mode == 0) {
 
@@ -319,7 +311,6 @@ int serverService() {
 			
 				int th = startThread((void*) handler, (void*) hd);
 				if (th < 0) {
-					//printf("Errore nell'avvio del thread handler\n");
 					continue;
 				}
 			#else
@@ -408,7 +399,7 @@ int serverReload() {
 
 //Clean the server
 void serverCleanup(int sock) {
-	freeServerOptions();
+	//freeServerOptions();
 	#ifndef __linux__
 		closesocket(sock);
 		WSACleanup();

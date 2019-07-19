@@ -17,7 +17,6 @@
 #define SENDBUF_SIZE 1024
 #define RECVBUF_SIZE 64
 
-
 struct SendFileData {
 	u_int sock;
 	char* response;
@@ -26,6 +25,7 @@ struct SendFileData {
 };
 
 
+//jkkdfjebfkjwebcfkew
 char* getClientAddress(struct sockaddr_in cli_addr) {
 
 	char port[6], b1[4], b2[4], b3[4], b4[4];
@@ -58,39 +58,34 @@ char* getClientAddress(struct sockaddr_in cli_addr) {
 
 	char* client_address = (char *) malloc(strlen(b1) + strlen(b2) + strlen(b3) + strlen(b4) + strlen(port) + 5);
 	if (client_address == NULL) {
-		printf("Errore in getClientAddress - malloc\n");
+		throwError(2, CLIENT_DATA, ALLOC_ERROR);
 		return NULL;
 	}
+
 	sprintf(client_address, "%s.%s.%s.%s:%s", b1, b2, b3, b4, port);	
-
 	printf("%s\n", client_address);
-
 	return client_address;
-
 }
 
-
+//kjedjbwekcbwk
 int checkPort(int port) {
+	
 	if(port >= 1024 && port < 65535) {
 		return 0;
 	}
-	return 1;
+	return -1;
 }
 
-
-/* Function: recvAll
-* -------------------------------
-*  
-*/
+//iuewfkjwefnewjfkwejfweb
 char* recvAll(int sock, size_t* len) {
 	
 	char *msg = (char *) malloc(1);
 	if (msg == NULL) {
-		printf("Errore in recvall - malloc\n");
+		throwError(2, RECV_ERROR, ALLOC_ERROR);
 		return NULL;
 	}
-	msg[0] = '\0';
 
+	msg[0] = '\0';
 	char recvbuf[RECVBUF_SIZE];
     int r;
     size_t r_tot = 0;
@@ -99,7 +94,7 @@ char* recvAll(int sock, size_t* len) {
     	r_tot += r;
     	msg = (char *) realloc(msg, r_tot);
     	if (msg == NULL) {
-			printf("Errore in recvall - realloc\n");
+			throwError(2, RECV_ERROR, ALLOC_ERROR);
 			return NULL;
 		}
 		memcpy((void *) &msg[r_tot-r], (void *) recvbuf, r);
@@ -108,26 +103,21 @@ char* recvAll(int sock, size_t* len) {
 
     *len = r_tot;
     return msg;
-
 }
 
 
-/* Function: sendAll
-* -------------------------------
-*  
-*/
+//eifbewbfkwebkwebfekwbwebkfe
 int sendAll(int sock, char *data, size_t data_sz) {
 
 	void *sendbuf = (void *) malloc(SENDBUF_SIZE);
 	if (sendbuf == NULL) {
-		printf("Errore in fun - malloc\n");
-		return 1;
+		throwError(1, ALLOC_ERROR);
+		return SEND_ERROR;
 	}
 
 	size_t bytes_sent;
 	size_t bytes_left = data_sz;
 	int n_packet = 0;
-
 
 	while (bytes_left > 0) {
 		if (bytes_left < SENDBUF_SIZE) {
@@ -144,16 +134,9 @@ int sendAll(int sock, char *data, size_t data_sz) {
 			free(sendbuf);
 			return SEND_ERROR;
 		}
-
 	}
 
 	free(sendbuf);
-
-	if (bytes_left > 0) {
-		printf("Errore in sendAll\n");
-		return 2;
-	}
-
+	if (bytes_left > 0) return SEND_ERROR;
 	return 0;
-
 }
