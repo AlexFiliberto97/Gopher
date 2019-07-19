@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,6 +15,7 @@ struct Thread {
 
 
 static struct Thread Threads[MAX_THREADS];
+static int THREAD_COLLECTOR_ALIVE = 1;
 
 
 void initThread() {
@@ -48,7 +48,7 @@ int joinCollect(pthread_t th) {
 
 
 void* threadCollector(void* input) {
-	while (1) {
+	while (THREAD_COLLECTOR_ALIVE == 1) {
 		for (int i = 0; i < MAX_THREADS; i++) {
 			if (Threads[i].collect == 1 && Threads[i].running == 1 && pthread_tryjoin_np(Threads[i].Th, NULL) == 0) {
 				Threads[i].Th = 0;
@@ -77,10 +77,15 @@ pthread_t startThread(void* (*f)(void*), void* data, int collect) {
 }
 
 
+void stopThreadCollector() {
+	THREAD_COLLECTOR_ALIVE = 0;
+}
+
+
 void destroyThreads() {
 	for (int i = 0; i < MAX_THREADS; i++) {
 		if (Threads[i].running == 1) {
-			pthread_cancel(Threads[i].Th);
+			pthread_join(Threads[i].Th, NULL);
 		}
 	}
 }

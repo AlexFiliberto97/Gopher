@@ -182,10 +182,10 @@ char** split(char* text, char delimiter, int* c) {
 */
 char** readlines(char* path, int* count) {
 	#ifndef __linux__
-		char *text = readFile(path);
+		char* text = readFile(path);
 	#else
 		size_t size;
-		char *text = readFile(path, &size);
+		char* text = readFile(path, &size);
 	#endif
 	if (text == NULL) {
 		printf("Errore in readLines - readFileWin32\n");
@@ -198,6 +198,7 @@ char** readlines(char* path, int* count) {
 		return NULL;
 	}
 	*count = n;
+	free(text);
 	return lines;
 }
 
@@ -234,7 +235,7 @@ char* getExtension(char* filename) {
 *  
 */
 char* concatList(char** list, u_int count, char separator) {
-	char*s = (char*) malloc(1);
+	char* s = (char*) malloc(1);
 	if (s == NULL) {
 		printf("Errore in concatList - malloc\n");
 		return NULL;
@@ -247,7 +248,9 @@ char* concatList(char** list, u_int count, char separator) {
 			printf("Errore in concatList - realloc\n");
 			return NULL;
 		}	
-		sprintf(s, "%s%s%c", s, list[i], separator);
+		strcat(s, list[i]);
+		char tmp[2] = {separator, '\0'};
+		strcat(s, tmp);
 	}
 	return s;
 }
@@ -257,7 +260,7 @@ char* concatList(char** list, u_int count, char separator) {
 * -------------------------------
 *  
 */
-void freeList(char **list, int count) {
+void freeList(char** list, int count) {
 	for (int i = 0; i < count; i++) {
 		free(list[i]);
 	}
@@ -360,6 +363,7 @@ char* fixPath(char* path) {
 		fixed_path[c++] = path[i];
 	}
 	fixed_path = (char*) realloc(fixed_path, strlen(fixed_path) + 1);
+	free(path);
 	return fixed_path;
 }
 

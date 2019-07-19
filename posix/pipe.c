@@ -10,143 +10,84 @@
 #include <pthread.h>
 
 
-#define PIPE_PACKET_LENGTH 32
-#define MAX_PIPE_NUM 10
-
-
 struct Pipe {
-	char* name;
 	int handles[2];
+	int err;
 };
 
 
-static struct Pipe Pipes[MAX_PIPE_NUM];
+struct Pipe* loggerPipe;
 
 
-int initPipes() {
-
-	for (int i = 0; i < MAX_PIPE_NUM; i++) {
-		Pipes[i].name = NULL;
-		Pipes[i].handles[0] = -1;
-		Pipes[i].handles[1] = -1;
+struct Pipe* createLoggerPipe() {
+	loggerPipe = (struct Pipe*) create_shared_memory(sizeof(struct Pipe));
+	if (pipe(loggerPipe->handles) != 0) {
+		loggerPipe->err = 1;
+	} else {
+		loggerPipe->err = 0;
 	}
-
+	return loggerPipe;
 }
 
 
+int writePipe(struct Pipe* pipe, char* msg) {
 
-//Return the first avaliable index in Pipes array
-int newPipeIndex() {
-	for (int i = 0; i < MAX_PIPE_NUM; i++) {
-		if (Pipes[i].name == NULL)
-			return i;
-	}
-	return -1;
-}
+	close(pipe->handles[0]);
 
-//Return the first avaliable index in Pipes array
-int pipeIndex(char* name) {
-	for (int i = 0; i < MAX_PIPE_NUM; i++) {
-		if (strcmp(Pipes[i].name, name) == 0)
-			return i;
-	}
-	return -1;
-}
+	char sz[11];
+	sprintf(sz, "%d", (int) strlen(msg) + 1);
 
-//Create a new pipe identified by a name
-int createPipe(char* name){
+	char size[11];
 
-	int index = newPipeIndex();
-	if(index == -1)
-		return -1;
-
-	if(pipe(Pipes[index].handles) == -1){
-		return -1;
-	}
-
-	Pipes[index].name = (char*) malloc(strlen(name) + 1);
-	strcpy(Pipes[index].name, name);
-
-
-	return 0;
-
-}
-
-
-//Write on a pipe
-int writePipe(char* name, char* msg) {
-
-	int index = pipeIndex(name);
-	if(index == -1)
-		return -1;
-
-	close(Pipes[index].handles[0]);
-
-	char buffer[PIPE_PACKET_LENGTH];
-	int written = 0, tot_written = 0;
-	char* endchar = NULL;
-	
-	while (tot_written < strlen(msg) + 1) {
-
-		memcpy(buffer, &msg[tot_written], PIPE_PACKET_LENGTH);
-
-		written = write(Pipes[index].handles[1], buffer, PIPE_PACKET_LENGTH);
-
-		if (written < 0) {
-			return -1;
+	for (int i = 0; i < 11; i++) {
+		if (i < 11 - strlen(sz)) {
+			size[i] = '0';
+		} else {
+			size[i] = sz[i-11+strlen(sz)];
 		}
-
-		tot_written += written;
-
 	}
+
+	char* comp_msg = (char*) malloc(strlen(msg) + strlen(size) + 1);
+	sprintf(comp_msg, "%s%s", size, msg);
+
+	int written = write(pipe->handles[1], comp_msg, strlen(comp_msg) + 1);
+
+	if (written < strlen(comp_msg) + 1) {
+		return -1;
+	}
+
+	free(comp_msg);
 
 	return 0;
 
 }
 
 
-//Read from a pipe
-char* readPipe(char* name){
+char* readPipe(struct Pipe* pipe){
 
-	int index = pipeIndex(name);
-	if(index == -1) return NULL;
+	close(pipe->handles[1]);
 
-	close(Pipes[index].handles[1]);
+	int r; 
 
-	char buffer[PIPE_PACKET_LENGTH+1];
-	char* msg = (char*) malloc(1);
-	msg[0] = '\0';
-	int counter = 0, r = 0;
-	char* endchar = NULL;
+	char size[12];
+	r = read(pipe->handles[0], size, 11);
+	if (r < 11) return NULL;
+	size[11] = '\0';
 	
-	do {
-
-		int r = read(Pipes[index].handles[0], buffer, PIPE_PACKET_LENGTH);
-    	if (r < 0) return NULL;
-
-    	endchar = memchr(buffer, '\0', PIPE_PACKET_LENGTH);
-    	buffer[PIPE_PACKET_LENGTH] = '\0';
-		msg = (char *) realloc(msg, ++counter * PIPE_PACKET_LENGTH);
-    	strcat(msg, buffer);
+	int sz = atoi(size);
 
 
-	} while (endchar == NULL);
-
-	msg = (char *) realloc(msg, strlen(msg) + 1);
+	char* msg = (char*) malloc(sz);
+	r = read(pipe->handles[0], msg, sz);
+	if (r < sz) return NULL;
 
 	return msg;
 
 }
 
 
-void destroyPipes() {
-	for (int i = 0; i < MAX_PIPE_NUM; i++) {
-		if (Pipes[i].name != NULL) {
-			free(Pipes[i].name);
-			close(Pipes[i].handles[0]);
-			close(Pipes[i].handles[1]);
-			Pipes[i].handles[0] = -1;
-			Pipes[i].handles[1] = -1;
-		}
-	}
+int destroyLoggerPipe() {
+	close(loggerPipe->handles[0]);
+	close(loggerPipe->handles[1]);
+	free_shared_memory(loggerPipe, sizeof(loggerPipe));
 }

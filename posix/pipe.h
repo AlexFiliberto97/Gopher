@@ -4,12 +4,12 @@
 
 	#include "pipe.c"
 	
-	int initPipes();	
-	int createPipe(char*);
-	int newPipeIndex();
-	int pipeIndex(char*);
-	int createPipe(char*);
-	int writePipe(char*, char*);
-	char *readPipe(char*);
+	// int initPipes();	
+	// int createPipe(char*);
+	// int newPipeIndex();
+	// int pipeIndex(char*);
+	// int createPipe(char*);
+	int writePipe(struct Pipe*, char*);
+	char *readPipe(struct Pipe*);
 
 #endif

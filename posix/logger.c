@@ -8,13 +8,13 @@
 #include "pipe.h"
 #include "locking.h"
 
-#define PIPE_PACKET_LENGTH 32
-
 
 void* logger(void* input) {
 
+	struct Pipe* loggerPipe = (struct Pipe*) input;
+
 	FILE* logFile;
-	char* msg;
+	char* msg = NULL;
 
 	while (1) {
 
@@ -22,9 +22,10 @@ void* logger(void* input) {
 
             while (*(shared_lock->full) == 0) pthread_cond_wait(shared_lock->cond2, shared_lock->mutex);
 
-	        msg = readPipe("LOGGER_PIPE");
-			
+	        msg = readPipe(loggerPipe);
+
 			if (msg != NULL) {
+				printf("%s\n", msg);
 				logFile = fopen("log.txt", "a+b");
 				fwrite(msg, 1, strlen(msg), logFile);
 				fclose(logFile);

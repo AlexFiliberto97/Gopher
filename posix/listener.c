@@ -7,50 +7,6 @@
 #include "../network.h"
 
 
-// int processHandler(void* input) {
-// 	return handler(input, 1);
-// }
-
-
-// void* listener(int argc, char** argv){
-
-// 	printf("PROONDNJNJ\n");
-
-// 	// serverInit();
-// 	struct ClientData cd;
-// 	cd.sock = atoi(argv[1]);
-// 	cd.data = argv[1];
-
-
-// 	printf("%s\n", argv[0]);
-
-// 	// char* address = (char*) malloc(strlen(argv[5]) + 1);
-// 	// int* port = (int*) malloc(sizeof(int));
-// 	// char* root_path = (char*) malloc(strlen(argv[7]) + 1);
-
-// 	// strcpy(address, argv[5]);
-// 	// *port = atoi(argv[6]);
-// 	// strcpy(root_path, argv[7]);
-
-// 	// setGopherOptions(address, port, root_path);
-
-// 	// handler((void*) &cd, 1);
-
-// 	return 0;
-
-// }
-
-// struct ListenerData {
-// 	int sock;
-// 	int port;
-// 	char* cli_data;
-// 	char* address;
-// 	char* root_path;
-// };
-
-
-
-
 void* listener(void* input){
 
 	int* err = (int*) create_shared_memory(sizeof(int));

@@ -58,12 +58,14 @@ void freeHandlerDataStruct(struct HandlerData* hd, int process_mode) {
 		free(hd->cli_data);
 		free(hd->address);
 		free(hd->root_path);
+		free(hd->abs_root_path);
 		free(hd);
 	} else {
 		#ifdef __linux__
 			free_shared_memory(hd->cli_data, strlen(hd->cli_data) + 1);
 			free_shared_memory(hd->address, strlen(hd->address) + 1);
 			free_shared_memory(hd->root_path, strlen(hd->root_path) + 1);
+			free_shared_memory(hd->abs_root_path, strlen(hd->abs_root_path) + 1);
 			free_shared_memory(hd, sizeof(hd));
 		#endif
 	} 
@@ -184,13 +186,12 @@ char* getItem(char* path, int *type) {
 */
 char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 
-	char* tmp = (char*) malloc(strlen(req) + 3);
-	if (tmp == NULL) return NULL;
-	sprintf(tmp, "/%s/", req);
-
-	char* request = fixPath(tmp);
+	char* request = (char*) malloc(strlen(req) + 3);
 	if (request == NULL) return NULL;
-	free(tmp);
+	sprintf(request, "/%s/", req);
+
+	request = fixPath(request);
+	if (request == NULL) return NULL;
 
 	int err;
 
@@ -307,6 +308,7 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 	freeList(files_list, files_count);
 	freeDict(ext_dict);
 	if (use_assoc == 1) freeDict(assoc_dict);
+	free(request);
 	return gophList;
 
 }
@@ -339,8 +341,8 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 	printf("Richiesta:\n  %s\n", request);
 
 	int type = -1;
-	char* input_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);
-	if (input_path == NULL) {
+	char* req_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);
+	if (req_path == NULL) {
 		printf("Errore in handleRequest - malloc\n");
 		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
 		if (response == NULL) return NULL;
@@ -348,10 +350,9 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 		*response_sz = strlen(response) + 1;
 		return response;
 	}
-	sprintf(input_path, "%s%s", hd->abs_root_path, request);
+	sprintf(req_path, "%s%s", hd->abs_root_path, request);
 
-	char* req_path = fixPath(input_path);
-	free(input_path);
+	req_path = fixPath(req_path);
 	if (req_path == NULL) {
 		printf("Errore in handleRequest - fixPath\n");
 		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
@@ -390,7 +391,6 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 			printf("Errore in handleRequest - gopherListDir\n");
 			response = (char*) malloc(strlen(EMPTY_FOLDER_MSG) + 1);
 			if (response == NULL) return NULL;
-			*response_sz = strlen(EMPTY_FOLDER_MSG) + 1;
 			strcpy(response, EMPTY_FOLDER_MSG);
 			free(req_path);
 			free(item);
@@ -420,9 +420,7 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 
 void* sendResponse(void* input) {
 	struct SendFileData* sfd = (struct SendFileData*) input;
-	printf("IUHASFHUIDUI 1\n");
 	sfd->err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
-	printf("IUHASFHUIDUI 2\n");
 	return NULL;
 }
 
@@ -486,8 +484,9 @@ int handler(void* input, int process_mode) {
 		    pthread_mutex_lock(shared_lock->mutex);
 	        while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
 
-	        writePipe("LOGGER_PIPE", pipe_msg);
-
+	        err = writePipe(loggerPipe, pipe_msg);
+	        if (err != 0) printf("ERROR: writing pipe\n");
+	        
 	        *(shared_lock->full) = 1;
 	        pthread_cond_signal(shared_lock->cond2); 
 		    pthread_mutex_unlock(shared_lock->mutex);

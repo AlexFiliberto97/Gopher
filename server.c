@@ -304,7 +304,6 @@ int serverService() {
 
 		
 		if (serverOptions.process_mode == 0) {
-
 			
 			struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
 			hd->cli_data = (char*) malloc(strlen(cli_data) + 1);
@@ -337,7 +336,7 @@ int serverService() {
 
 			#ifndef __linux__
 				int argc = 8;
-				char** cmd = (char**) malloc(sizeof(char*) * 8);
+				char** cmd = (char**) malloc(sizeof(char*) * 9);
 	   			cmd[0] = (char*) malloc(11);
 	   			cmd[1] = (char*) malloc(11);
 	   			cmd[2] = (char*) malloc(11);
@@ -380,6 +379,7 @@ int serverService() {
 			}
 
 		}
+		free(cli_data);
 	}
 	SERV_RUNNING = 1;
 	serverCleanup(serverOptions.sock);
