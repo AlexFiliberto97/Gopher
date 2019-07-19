@@ -170,6 +170,7 @@ int getConfig() {
 
 	serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
 	if (serverOptions.root_path == NULL) {
+		free(rel_root_path);
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
@@ -177,6 +178,7 @@ int getConfig() {
 	strcpy(serverOptions.root_path, rel_root_path);
 	free(rel_root_path);
 	freeDict(config_dict);
+
 	return 0;
 }
 
@@ -185,7 +187,14 @@ int serverInit(int argc, char** args) {
 
 	// freeServerOptions();
 
-	int confErr = getConfig();
+	int sock;
+	char* address;
+	int port;
+	int process_mode;
+	char* root_path;
+	char* abs_root_path;
+
+	// int confErr = getConfig();
 	int optsErr = getOpts(argc, args);
 	if (confErr != 0 && optsErr != 0) {
 		return confErr;

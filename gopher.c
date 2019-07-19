@@ -477,8 +477,10 @@ int handler(void* input, int process_mode) {
 
 		#ifndef __linux__
 		 	waitEvent("WRITE_LOG_EVENT");
+
 		 	err = writePipe("LOGGER_PIPE", pipe_msg);
-		 	if (err != 0) {}
+		 	if (err != 0) printf("ERROR: writing pipe\n");
+		 	
 		 	setEvent("READ_LOG_EVENT");
 		#else
 		    pthread_mutex_lock(shared_lock->mutex);
