@@ -96,7 +96,7 @@ int getConfig() {
 	char** config_assoc_list;
 	config_assoc_list = readlines(CONFIG_FILE_PATH, &config_count);
 	if (config_assoc_list == NULL) return ALLOC_ERROR;
-	
+
 	struct Dict config_dict = buildDict(config_assoc_list, config_count);
 	if (config_dict.err != 0) return ALLOC_ERROR;
 	freeList(config_assoc_list, config_count);
@@ -179,6 +179,7 @@ int serverInit(int argc, char** args) {
 
 	int confErr = getConfig();
 	if (confErr != 0) {
+		throwError(1, confErr);
 		log_output("ERROR: getConfig", 0);
 		return -1;
 	}

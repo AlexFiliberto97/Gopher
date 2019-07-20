@@ -75,3 +75,13 @@
 127.0.0.1:23738 /media/giorgio/Local Disk/Film/film.srt 57486 byte
 127.0.0.1:24250 /media/giorgio/Local Disk/Film/film.srt 57486 byte
 127.0.0.1:25223 /media/giorgio/Local Disk/Film/anello.mkv 13373713373 byte
+127.0.0.1:14035 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:14547 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:53455 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:12524 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:13036 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:13548 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:54479 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:41683 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:42195 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:43731 /media/giorgio/Local Disk/Film/LOTR The Fellowship of the Ring.mkv 13373713373 byte
