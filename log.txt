@@ -35,3 +35,43 @@
 127.0.0.1:47233 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
 127.0.0.1:47745 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
 127.0.0.1:48769 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:8837 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:9349 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:9861 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:31877 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:32389 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:32901 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:33413 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:33925 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:34437 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:34949 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:35461 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:35973 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:36997 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:37509 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:36485 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:38021 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:36536 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:39045 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:37048 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:37560 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:42629 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:39096 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:43141 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:43653 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:48261 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:34438 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:44678 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:59526 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:61062 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:65158 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:2183 /media/giorgio/Local Disk/Film/film.mkv 2873385344 byte
+127.0.0.1:8327 /media/giorgio/Local Disk/Film/anello.mkv 13373713373 byte
+127.0.0.1:8839 /media/giorgio/Local Disk/Film/anello.mkv 13373713373 byte
+127.0.0.1:13447 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:13959 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:14471 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:23226 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:23738 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:24250 /media/giorgio/Local Disk/Film/film.srt 57486 byte
+127.0.0.1:25223 /media/giorgio/Local Disk/Film/anello.mkv 13373713373 byte

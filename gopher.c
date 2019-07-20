@@ -440,9 +440,9 @@ int handler(void* input, int process_mode) {
 	void** maps;
 
     char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode, &maps);
-    // if (response == NULL) {
-    // 	printf("Errore in handler - handleRequest\n");
-    // }
+    if (response == NULL) {
+    	printf("Errore in handler - handleRequest\n");
+    }
 
 	printf("Invio la risposta al client\n\n");
     

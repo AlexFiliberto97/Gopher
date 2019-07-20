@@ -77,7 +77,7 @@ void* processCollector(void* input) {
 		for (int i = 0; i < MAX_PROCESS; i++) {
 			if (Processes[i].running == 1 && waitpid(Processes[i].pid, &status, WNOHANG) == -1) {
 				Processes[i].running = 0;
-				printf("Process with id %d is now collected\n", i);
+				log_output("Process with id %d is now collected\n", i);
 			}
 		}
 	}

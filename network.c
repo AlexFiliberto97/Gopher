@@ -129,9 +129,10 @@ int sendAll(int sock, char* data, long long file_sz) {
 
 	long long bytes_sent;
 	long long bytes_left = file_sz;
-	int n_packet = 0;
+	long long n_packet = 0;
 
 	while (bytes_left > 0) {
+
 		if (bytes_left < SENDBUF_SIZE) {
 			memcpy((void *) sendbuf, (void *) &data[SENDBUF_SIZE * n_packet++], bytes_left);
 			bytes_sent = send(sock, sendbuf, bytes_left, 0);
