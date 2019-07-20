@@ -142,9 +142,9 @@ size_t getFileSize2(char* file_name) {
 
     struct stat st;
      
-    if (stat(file_name, &st) == 0)
+    if (stat(file_name, &st) == 0) {
         return (st.st_size);
-    else
+    } else
         return -1;
 
 }

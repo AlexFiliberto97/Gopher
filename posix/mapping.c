@@ -10,7 +10,12 @@
 #include <sys/mman.h>
 #include <assert.h>
 #include "process.h"
-#include "utils_posix.h"
+// #include "utils_posix.h"
+
+
+
+#include "../utils.h"
+
 
 
 void* createAndOpenMapping(char* path, size_t* size, int process_mode) { 

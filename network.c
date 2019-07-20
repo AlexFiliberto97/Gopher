@@ -11,6 +11,7 @@
 	#include <sys/socket.h>
 	#include <netinet/in.h>
 	#include <netinet/ip.h>
+	#include <errno.h>
 #endif
 
 
@@ -127,7 +128,6 @@ int sendAll(int sock, char *data, size_t data_sz) {
 	size_t bytes_sent;
 	size_t bytes_left = data_sz;
 	int n_packet = 0;
-
 
 	while (bytes_left > 0) {
 		if (bytes_left < SENDBUF_SIZE) {

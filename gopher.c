@@ -392,8 +392,6 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 			response = (char*) malloc(strlen(EMPTY_FOLDER_MSG) + 1);
 			if (response == NULL) return NULL;
 			strcpy(response, EMPTY_FOLDER_MSG);
-			free(req_path);
-			free(item);
 		} else {
 			response = concatList(list, count, '\n');
 			freeList(list, count);
