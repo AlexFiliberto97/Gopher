@@ -5,8 +5,8 @@
 #include <winbase.h>
 #include "../error.h"
 
-void freeArray(char** list, int c) {
 
+void freeArray(char** list, int c) {
 	for (int i = 0; i < c; i++) {
 		if(list[i] != NULL) {
 			free(list[i]);
@@ -14,6 +14,7 @@ void freeArray(char** list, int c) {
 	}
 	free(list);
 }
+
 
 int countDirElements(char *path) {
 
@@ -44,7 +45,8 @@ int countDirElements(char *path) {
 	return c;
 }
 
-char *readFile(char *fileName) {
+
+char* readFile(char *fileName) {
 
 	int err;
 	HANDLE hFile = CreateFile(fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -101,6 +103,7 @@ char *readFile(char *fileName) {
 	free(buf);
 	return data;
 } 
+
 
 char** listDir(char *path, int *count) {
 
@@ -169,6 +172,7 @@ char** listDir(char *path, int *count) {
 	return list;
 }
 
+
 int existsDir(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
@@ -179,6 +183,7 @@ int existsDir(char* path) {
 	return 0;
 }
 
+
 int existsFile(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
@@ -188,6 +193,7 @@ int existsFile(char* path) {
 
 	return 0;
 }
+
 
 int appendToFile(char* path, char* text) {
 

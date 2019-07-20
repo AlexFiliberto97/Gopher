@@ -13,3 +13,25 @@
 127.0.0.1:23262 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
 127.0.0.1:23774 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
 127.0.0.1:24286 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:40065 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:40577 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:49900 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:32896 /home/giorgio/Programming/SoIIProject/root/doc.txt 37 byte
+127.0.0.1:33408 /home/giorgio/Programming/SoIIProject/root/doc.txt 37 byte
+127.0.0.1:42112 /home/giorgio/Programming/SoIIProject/root/doc.txt 37 byte
+127.0.0.1:51840 /home/giorgio/Programming/SoIIProject/root/doc.txt 2113 byte
+127.0.0.1:52352 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:3713 /media/giorgio/Local Disk/Film/The Descent.mkv 2873385344 byte
+127.0.0.1:7297 /media/giorgio/Local Disk/Film/The Descent.mkv 2873385344 byte
+127.0.0.1:29825 /media/giorgio/Local Disk/Film/The Descent.mkv 2873385344 byte
+127.0.0.1:39553 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:41089 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:41601 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:42113 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:42625 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:43649 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:44161 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:46209 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:47233 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:47745 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
+127.0.0.1:48769 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte

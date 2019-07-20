@@ -46,9 +46,9 @@ void serverStop();
 //Global structs
 struct Opts {
 	int sock;
-	char* address;
 	int port;
 	int process_mode;
+	char* address;
 	char* root_path;
 	char* abs_root_path;
 };
@@ -164,8 +164,8 @@ int getConfig() {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
-	
 	strcpy(serverOptions.root_path, rel_root_path);
+
 	free(rel_root_path);
 	freeDict(config_dict);
 

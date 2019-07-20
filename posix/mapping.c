@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,13 +11,18 @@
 #include "process.h"
 // #include "utils_posix.h"
 
-
+#define MAX_MAP_SIZE 1073741824
 
 #include "../utils.h"
 
 
+// struct FileMapping {
+// 	void* map;
+// 	size_t size;
+// };
 
-void* createAndOpenMapping(char* path, size_t* size, int process_mode) { 
+void* createAndOpenMapping(char* path, long long* size, int process_mode) { 
+// void** createAndOpenMapping(char* path, long long* size, int process_mode) { 
 
 	// LOCK
 
@@ -27,16 +31,33 @@ void* createAndOpenMapping(char* path, size_t* size, int process_mode) {
 	int fd = open(path, O_RDONLY);
 	assert(fd != -1);
 
-    int protection = PROT_READ;
-    int visibility = MAP_SHARED;
-
-    void* map = mmap(NULL, *size, protection, visibility, fd, 0);
+    void* map = mmap(NULL, *size, PROT_READ, MAP_SHARED, fd, 0);
 
     close(fd);
 
     // UNLOCK
 
     return map;
+
+	// int fd = open(path, O_RDONLY);
+	// assert(fd != -1);
+
+	// *size = getFileSize2(path);
+
+	// int n_maps = *size / MAX_MAP_SIZE;
+	// if (*size % MAX_MAP_SIZE > 0) n_maps++;
+
+	// void** maps = (void**) malloc(sizeof(void*) * n_maps);
+
+	// for (int i = 0; i < n_maps; i++) {
+	// 	if (i == n_maps - 1) {
+	// 		maps[i] = mmap(NULL, *size %  MAX_MAP_SIZE, PROT_READ, MAP_SHARED, fd, i * MAX_MAP_SIZE);	
+	// 	} else {
+	// 		maps[i] = mmap(NULL, (size_t) MAX_MAP_SIZE, PROT_READ, MAP_SHARED, fd, i * MAX_MAP_SIZE);
+	// 	}
+	// }
+
+	// return maps;
 
 }
 

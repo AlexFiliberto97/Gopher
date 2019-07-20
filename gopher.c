@@ -314,27 +314,11 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 }
 
 
-/* Function: checkEmptyRequest
-* -------------------------------
-*  determina se la stringa data in input e' da considerare come vuota,
-*  controllandone la lunghezza e ignorando i simboli '/'
-*  
-*  return: 1 se e' vuota, 0 se non lo e'
-*/
-int checkEmptyRequest(char* req) {
-	if (strlen(req) == 0) return 1;
-	for (int i = 0; i < strlen(req); i++) {
-		if (req[i] != '/') return 0;
-	}
-	return 1;
-}
-
-
 /* Function: handleRequest
 * -------------------------------
 *  
 */
-char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode) {
+char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode, void*** map) {
 
 	char* response;
 
@@ -369,13 +353,15 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 	if (type == 0) { // FILE
 
 		printf("  %s -> file\n", item);
-		size_t file_sz;
+		long long file_sz;
 		#ifndef __linux__
 			HANDLE hMap = createMapping(item, hd->cli_data, &file_sz, process_mode);
 			response = readMapping(hMap);
 			*response_sz = file_sz;
 			*mapping = 1;
 		#else
+			// *map = createAndOpenMapping(item, &file_sz, process_mode);
+			// response = NULL;
 			response = createAndOpenMapping(item, &file_sz, process_mode);
 			*response_sz = file_sz;
 			*mapping = 1;
@@ -416,6 +402,13 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 }
 
 
+void* sendResponseFile(void* input) {
+	struct SendFileData* sfd = (struct SendFileData*) input;
+	sfd->err = sendFile(sfd->sock, sfd->maps, sfd->response_sz);
+	return NULL;
+}
+
+
 void* sendResponse(void* input) {
 	struct SendFileData* sfd = (struct SendFileData*) input;
 	sfd->err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
@@ -444,15 +437,30 @@ int handler(void* input, int process_mode) {
 
     size_t response_sz;
     int file_request = 0;
+	void** maps;
 
-    char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode);
-    if (response == NULL) {
-    	printf("Errore in handler - handleRequest\n");
-    }
+    char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode, &maps);
+    // if (response == NULL) {
+    // 	printf("Errore in handler - handleRequest\n");
+    // }
 
 	printf("Invio la risposta al client\n\n");
     
-	struct SendFileData sfd = {hd->sock, response, response_sz, 0};
+	struct SendFileData sfd;
+
+	if (response == NULL) {
+		sfd.sock = hd->sock;
+		sfd.response = NULL;
+		sfd.maps = maps;
+		sfd.response_sz = response_sz;
+		sfd.err = 0;
+	} else {
+		sfd.sock = hd->sock;
+		sfd.response = response;
+		sfd.maps = NULL;
+		sfd.response_sz = response_sz;
+		sfd.err = 0;
+	}
 
 	if (file_request == 1) {
 

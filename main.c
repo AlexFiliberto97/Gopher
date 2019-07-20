@@ -16,7 +16,7 @@
 
 
 // void* testfunction(void* input) {
-//     sleep(10);
+//     sleep(6);
 //     sigint_handler(0);
 //     sleep(1);
 // }
@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
 
     // pthread_t th = startThread(testfunction, NULL, 0);
 
-    no_daemon(); 
+    // no_daemon(); 
     
 	init_env();
 	
@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
 		throwError(2, err, -1);
 		return -1;
 	}
-	
 
 	while (SERVER_ALIVE == 1) {
 
