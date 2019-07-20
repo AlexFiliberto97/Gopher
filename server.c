@@ -295,7 +295,6 @@ int serverService() {
 		}
 
 		if (serverOptions.process_mode == 0) {
-			
 			struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
 			hd->cli_data = (char*) malloc(strlen(cli_data) + 1);
 			hd->address = (char*) malloc(strlen(serverOptions.address) + 1);
@@ -335,7 +334,7 @@ int serverService() {
 	   			cmd[6] = (char*) malloc(11);
 	   			cmd[7] = (char*) malloc(strlen(serverOptions.root_path) + 1);
 	   			cmd[8] = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
-
+	   			
 	   			sprintf(cmd[0], "%d", acceptSocket);
 	   			sprintf(cmd[1], "%d", getWriter("LOGGER_PIPE"));
 	   			sprintf(cmd[2], "%d", eventHandler("WRITE_LOG_EVENT"));
@@ -366,7 +365,6 @@ int serverService() {
 				throwError(2, SERVER_ERROR_H, err);
 				continue;
 			}
-
 		}
 		free(cli_data);
 	}

@@ -20,7 +20,7 @@ int serverInit() {
 
 int main(int argc, char** argv) {
 
-	//printf("------------- Sono DIO (pro)cesso -------------\n");
+	printf("------------- Sono DIO (pro)cesso -------------\n");
 
 	serverInit();
 	addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));

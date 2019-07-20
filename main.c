@@ -15,18 +15,9 @@
 #endif
 
 
-// void* testfunction(void* input) {
-//     sleep(6);
-//     sigint_handler(0);
-//     sleep(1);
-// }
-
-
 int main(int argc, char** argv) {
 
 	int err;
-
-    // pthread_t th = startThread(testfunction, NULL, 0);
 
     // no_daemon(); 
     
@@ -65,8 +56,6 @@ int main(int argc, char** argv) {
 	}
 
 	clean_env();
-
-    // joinCollect(th);
 
 	return 0;
 
