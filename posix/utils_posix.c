@@ -191,24 +191,24 @@ char* readFile(char* path, size_t* size) {
 
 	buf[sz] = '\0';
 
-	return buf;
+	// return buf;
 
-	// char* data = (char*) malloc(sz + 1);
+	char* data = (char*) malloc(sz + 1);
 
-	// int idx = 0;
+	int idx = 0;
 
-	// for (int i = 0; i < strlen(buf); i++) {
-	// 	if (buf[i+1] == '\n' && i + 1 < strlen(buf)) continue;
-	// 	data[idx++] = buf[i];
-	// }
-	// data[idx] = '\0';
+	for (int i = 0; i < strlen(buf); i++) {
+	 	if (buf[i] == '\r' && buf[i+1] == '\n' && i + 1 < strlen(buf)) continue;
+	 	data[idx++] = buf[i];
+	}
+	data[idx] = '\0';
 
-	// data = (char*) realloc(data, strlen(data) + 1);
+	data = (char*) realloc(data, strlen(data) + 1);
 
-	// *size = strlen(data) + 1;
-	// free(buf);
+	*size = strlen(data) + 1;
+	free(buf);
 
-	// return data;
+	return data;
 
 }
 
