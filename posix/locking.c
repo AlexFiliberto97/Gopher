@@ -77,3 +77,12 @@ int initLocking() {
     return 0;
 
 }
+
+
+void destroySharedLock() {
+    free_shared_memory((void*) shared_lock->cond1, sizeof(shared_lock->cond1));
+    free_shared_memory((void*) shared_lock->cond2, sizeof(shared_lock->cond2));
+    free_shared_memory((void*) shared_lock->mutex, sizeof(shared_lock->mutex));
+    free_shared_memory((void*) shared_lock->full, sizeof(shared_lock->full));
+    free_shared_memory((void*) shared_lock, sizeof(shared_lock));
+}

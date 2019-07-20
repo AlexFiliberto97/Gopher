@@ -10,8 +10,8 @@
 	char *getItem(char*, int*);
 	char **gopherListDir(char*, char*, int*, struct HandlerData*);
 	int checkEmptyRequest(char*);
-	char *handleRequest(char*, size_t*, int*, struct HandlerData*, int);
-	void* sendFile(void* input);
+	char *handleRequest(char*, size_t*, int*, struct HandlerData*, int, void***);
+	void* sendResponse(void* input);
 	int handler(void*, int);
 
 #endif

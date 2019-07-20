@@ -26,8 +26,6 @@ int isRegularFile(const char* path) {
 
 
 int existsDir(char* path) {
-	// char npath[strlen(path)+4];
-	// sprintf(npath, "../%s", path);
 	if (isDirectory(path) == 0) {
 		return 0;
 	}
@@ -36,8 +34,6 @@ int existsDir(char* path) {
 
 
 int existsFile(char* path) {
-	// char npath[strlen(path)+4];
-	// sprintf(npath, "../%s", path);
 	if (isRegularFile(path) == 0) {
 		return 0;
 	}
@@ -146,9 +142,9 @@ size_t getFileSize2(char* file_name) {
 
     struct stat st;
      
-    if (stat(file_name, &st) == 0)
+    if (stat(file_name, &st) == 0) {
         return (st.st_size);
-    else
+    } else
         return -1;
 
 }
@@ -159,7 +155,7 @@ size_t getFileSize2(char* file_name) {
 */
 char* readFile(char* path, size_t* size) {
 
-	FILE *fp;
+	FILE* fp;
 	fp = fopen(path, "rb");
 
 	if (fp == NULL) {
@@ -175,7 +171,7 @@ char* readFile(char* path, size_t* size) {
 		return NULL;
 	}
 
-	char *buf = (char *) malloc(sz + 1);
+	char* buf = (char *) malloc(sz + 1);
 
 	if (buf == NULL) {
 		printf("Errore in readFile - malloc\n");
@@ -197,7 +193,7 @@ char* readFile(char* path, size_t* size) {
 
 	// return buf;
 
-	char *data = (char *) malloc(sz + 1);
+	char* data = (char*) malloc(sz + 1);
 
 	int idx = 0;
 
@@ -207,7 +203,7 @@ char* readFile(char* path, size_t* size) {
 	}
 	data[idx] = '\0';
 
-	data = (char *) realloc(data, strlen(data) + 1);
+	data = (char*) realloc(data, strlen(data) + 1);
 
 	*size = strlen(data) + 1;
 	free(buf);
