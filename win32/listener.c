@@ -59,6 +59,7 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
+
 	free(hd->cli_data);
 	free(hd->address);
 	free(hd->root_path);
@@ -66,4 +67,5 @@ int main(int argc, char** argv) {
 	free(hd);
 
 	return 0;
+
 }

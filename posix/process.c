@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "../utils.h"
 
 #define MAX_PROCESS 1024
 
@@ -17,6 +17,7 @@ struct Process {
 
 
 static struct Process Processes[MAX_PROCESS];
+static int PROCESS_COLLECTOR_ALIVE = 1;
 
 
 void initProcess() {
@@ -37,7 +38,8 @@ int processIndex() {
 }
 
 
-int startProcess(void* (*f)(void*), int argc, char** argv) {
+// int startProcess(void* (*f)(void*), int argc, char** argv) {
+int startProcess(void* (*f)(void*), void* data) {
 
 	int index = processIndex();
 
@@ -60,7 +62,7 @@ int startProcess(void* (*f)(void*), int argc, char** argv) {
     signal(SIGHUP, SIG_IGN);
     signal(SIGINT, SIG_IGN);
     
-	f((void*) argv);
+	f((void*) data);
 	exit(0);
 
 	return pid;
@@ -72,22 +74,30 @@ void* processCollector(void* input) {
 
 	int status;
 
-	while (1) {
+	while (PROCESS_COLLECTOR_ALIVE == 1) {
 		for (int i = 0; i < MAX_PROCESS; i++) {
 			if (Processes[i].running == 1 && waitpid(Processes[i].pid, &status, WNOHANG) == -1) {
 				Processes[i].running = 0;
-				printf("Process with id %d is now collected\n", i);
+				printlog("Process with id %d is now collected\n", i, NULL);
 			}
 		}
 	}
+
+	return NULL;
+	
+}
+
+void stopProcessCollector() {
+	PROCESS_COLLECTOR_ALIVE = 0;
 }
 
 
 //Destroy the process environment
 void destroyProcess() {
-	for (int i = 0; i < MAX_PROCESS; i++) {
-		if (Processes[i].pid != -1) {
-			kill(Processes[i].pid, SIGKILL);
+	int status;
+	for (int i = 1; i < MAX_PROCESS; i++) {
+		if (Processes[i].pid > 0) {
+			waitpid(Processes[i].pid, &status, 0);
 			Processes[i].pid = -1;
 		}
 	}

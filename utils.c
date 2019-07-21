@@ -33,6 +33,7 @@ int getFileSize(FILE *fp) {
 	return sz;
 }
 
+
 char* slice(char *text, int lo, int hi) {
 
 	char* sliced = (char *) malloc(hi - lo + 1);
@@ -72,7 +73,6 @@ int countSplitChar(char *text, char delimiter) {
 
 char** split(char* text, char delimiter, int* c) {
 
-	int* pos;
 	int count = countSplitChar(text, delimiter);
 	*c = count;
 	char** list = (char**) malloc(sizeof(char*) * count);
@@ -81,7 +81,6 @@ char** split(char* text, char delimiter, int* c) {
 		return NULL;
 	}
 
-	char* tmp;
 	int tmp_count = 0;
 	int x = 0;
 	for (int i = 0; i < strlen(text); i++) {
@@ -112,14 +111,15 @@ char** split(char* text, char delimiter, int* c) {
 char** readlines(char* path, int* count) {
 
 	size_t size;
-	char *text = readFile(path, &size);
+	char* text = readFile(path, &size);
+
 	if (text == NULL) {
 		throwError(1, READ_FILE_ERROR);
 		return NULL;
 	}
 	
 	int n;
-	char **lines = split(text, '\n', &n);
+	char** lines = split(text, '\n', &n);
 	if (lines == NULL) {
 		free(text);
 		return NULL;
@@ -153,9 +153,10 @@ char* getExtension(char* filename) {
 }
 
 char* concatList(char** list, u_int count, char separator) {
-	
-	char*s = (char*) malloc(1);
-	if (s == NULL) {
+
+	char* s = (char*) malloc(1);
+
+    if (s == NULL) {
 		throwError(1, ALLOC_ERROR);
 		return NULL;
 	}
@@ -167,10 +168,28 @@ char* concatList(char** list, u_int count, char separator) {
 			throwError(1, ALLOC_ERROR);
 			return NULL;
 		}	
-		sprintf(s, "%s%s%c", s, list[i], separator);
+		strcat(s, list[i]);
+		char tmp[2] = {separator, '\0'};
+		strcat(s, tmp);
 	}
 	return s;
 }
+
+
+void freeList(char** list, int count) {
+	for (int i = 0; i < count; i++) {
+		free(list[i]);
+	}
+	free(list);
+}
+
+
+void printStringList(char **list, int n) {
+	for (int i = 0; i < n; i++) {
+		printf("%s\n", list[i]);
+	}
+}
+
 
 struct Dict buildDict(char** list, int length) {
 
@@ -247,11 +266,13 @@ char* fixPath(char* path) {
 		fixed_path[c++] = path[i];
 	}
 	fixed_path = (char*) realloc(fixed_path, strlen(fixed_path) + 1);
+
 	if (fixed_path == NULL) {
 		throwError(1, ALLOC_ERROR);
 		return NULL;
 	}
 
+	free(path);
 	return fixed_path;
 }
 
@@ -269,14 +290,13 @@ int isNumeric(char* str) {
 	
 	for (int i = 0; i < strlen(str); i++) {
 		if (!(str[i] >= 48 && str[i] < 58)) {
-			return 0;
+			return -1;
 		}
 	}
-	return -1;
+	return 0;
 }
 
-void log_output(char* format, int n) {
-    
+void printlog(char* format, int n, char* s) {
     printf(format, n);
     #ifdef __linux__
         syslog(LOG_INFO, format, n);

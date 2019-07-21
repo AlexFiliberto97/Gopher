@@ -1,3 +1,0 @@
-Server listening on port: 7070
-Sigint detectedQuitting server...Process with id 0 is now collected
-AAAAAAAAAAAAAAAAaaaa

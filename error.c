@@ -115,15 +115,18 @@ void throwError(int num, ...) {
 
 	va_list valist;
    	va_start(valist, num);
+    
    	FILE* errLog = fopen("error.log", "a+b");
    	if (errLog ==  NULL) {
    		return;
    	}
 
+
    	fwrite("Error >>>\n", 1, strlen("Error >>>\n"), errLog);
    
    	for (int i = 0; i < num; i++) {
-   		int errCode = va_arg(valist, int);
+
+        int errCode = va_arg(valist, int);
    		if (errCode == -1) {
    			fwrite("<<<\n", 1, strlen("<<<\n"), errLog);
    		} else {
@@ -133,6 +136,7 @@ void throwError(int num, ...) {
    				free(msg);
    			}
    		}
+
    	}
    	fclose(errLog);
 }

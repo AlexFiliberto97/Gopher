@@ -1,6 +1,6 @@
 #ifndef LOCKING_H_
 
-    #include "locking.c"
+    #include "mutex.c"
 
     int initLocking();
 

@@ -19,7 +19,6 @@
 	#include <pthread.h>
 	#include "posix/utils_posix.h"
 	#include "posix/pipe.h"
-	// #include "posix/locking.h"
 	#include "posix/logger.h"
 	#include "posix/mapping.h"
 	#include "posix/thread.h"
@@ -58,12 +57,14 @@ void freeHandlerDataStruct(struct HandlerData* hd, int process_mode) {
 		free(hd->cli_data);
 		free(hd->address);
 		free(hd->root_path);
+		free(hd->abs_root_path);
 		free(hd);
 	} else {
 		#ifdef __linux__
 			free_shared_memory(hd->cli_data, strlen(hd->cli_data) + 1);
 			free_shared_memory(hd->address, strlen(hd->address) + 1);
 			free_shared_memory(hd->root_path, strlen(hd->root_path) + 1);
+			free_shared_memory(hd->abs_root_path, strlen(hd->abs_root_path) + 1);
 			free_shared_memory(hd, sizeof(hd));
 		#endif
 	} 
@@ -188,15 +189,12 @@ char* getItem(char* path, int *type) {
 */
 char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 
-	char* tmp = (char*) malloc(strlen(req) + 3);
-	if (tmp == NULL) return NULL;
-	sprintf(tmp, "/%s/", req);
-
-	char* request = fixPath(tmp);
+	char* request = (char*) malloc(strlen(req) + 3);
 	if (request == NULL) return NULL;
-	free(tmp);
+	sprintf(request, "/%s/", req);
 
-	int err;
+	request = fixPath(request);
+	if (request == NULL) return NULL;
 
 	//////////////////////////////////////////////////////////////////
 	// Genero la lista dei file contenuti nel path dato
@@ -311,24 +309,9 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 	freeList(files_list, files_count);
 	freeDict(ext_dict);
 	if (use_assoc == 1) freeDict(assoc_dict);
+	free(request);
 	return gophList;
 
-}
-
-
-/* Function: checkEmptyRequest
-* -------------------------------
-*  determina se la stringa data in input e' da considerare come vuota,
-*  controllandone la lunghezza e ignorando i simboli '/'
-*  
-*  return: 1 se e' vuota, 0 se non lo e'
-*/
-int checkEmptyRequest(char* req) {
-	if (strlen(req) == 0) return 1;
-	for (int i = 0; i < strlen(req); i++) {
-		if (req[i] != '/') return 0;
-	}
-	return 1;
 }
 
 
@@ -336,15 +319,15 @@ int checkEmptyRequest(char* req) {
 * -------------------------------
 *  
 */
-char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode) {
+char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode, void*** map) {
 
 	char* response;
 
 	printf("Richiesta:\n  %s\n", request);
 
 	int type = -1;
-	char* input_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);
-	if (input_path == NULL) {
+	char* req_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);
+	if (req_path == NULL) {
 		printf("Errore in handleRequest - malloc\n");
 		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
 		if (response == NULL) return NULL;
@@ -352,10 +335,9 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 		*response_sz = strlen(response) + 1;
 		return response;
 	}
-	sprintf(input_path, "%s%s", hd->abs_root_path, request);
+	sprintf(req_path, "%s%s", hd->abs_root_path, request);
 
-	char* req_path = fixPath(input_path);
-	free(input_path);
+	req_path = fixPath(req_path);
 	if (req_path == NULL) {
 		printf("Errore in handleRequest - fixPath\n");
 		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
@@ -372,13 +354,15 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 	if (type == 0) { // FILE
 
 		printf("  %s -> file\n", item);
-		size_t file_sz;
+		long long file_sz;
 		#ifndef __linux__
 			HANDLE hMap = createMapping(item, hd->cli_data, &file_sz, process_mode);
 			response = readMapping(hMap);
 			*response_sz = file_sz;
 			*mapping = 1;
 		#else
+			// *map = createAndOpenMapping(item, &file_sz, process_mode);
+			// response = NULL;
 			response = createAndOpenMapping(item, &file_sz, process_mode);
 			*response_sz = file_sz;
 			*mapping = 1;
@@ -394,10 +378,7 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 			printf("Errore in handleRequest - gopherListDir\n");
 			response = (char*) malloc(strlen(EMPTY_FOLDER_MSG) + 1);
 			if (response == NULL) return NULL;
-			*response_sz = strlen(EMPTY_FOLDER_MSG) + 1;
 			strcpy(response, EMPTY_FOLDER_MSG);
-			free(req_path);
-			free(item);
 		} else {
 			response = concatList(list, count, '\n');
 			freeList(list, count);
@@ -419,6 +400,13 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 
 	return response;
 
+}
+
+
+void* sendResponseFile(void* input) {
+	struct SendFileData* sfd = (struct SendFileData*) input;
+	sfd->err = sendFile(sfd->sock, sfd->maps, sfd->response_sz);
+	return NULL;
 }
 
 
@@ -450,15 +438,30 @@ int handler(void* input, int process_mode) {
 
     size_t response_sz;
     int file_request = 0;
+	void** maps;
 
-    char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode);
+    char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode, &maps);
     if (response == NULL) {
     	printf("Errore in handler - handleRequest\n");
     }
 
 	printf("Invio la risposta al client\n\n");
     
-	struct SendFileData sfd = {hd->sock, response, response_sz, 0};
+	struct SendFileData sfd;
+
+	if (response == NULL) {
+		sfd.sock = hd->sock;
+		sfd.response = NULL;
+		sfd.maps = maps;
+		sfd.response_sz = response_sz;
+		sfd.err = 0;
+	} else {
+		sfd.sock = hd->sock;
+		sfd.response = response;
+		sfd.maps = NULL;
+		sfd.response_sz = response_sz;
+		sfd.err = 0;
+	}
 
 	if (file_request == 1) {
 
@@ -481,17 +484,22 @@ int handler(void* input, int process_mode) {
 
 		#ifndef __linux__
 		 	waitEvent("WRITE_LOG_EVENT");
+
 		 	err = writePipe("LOGGER_PIPE", pipe_msg);
-		 	if (err != 0) {}
+		 	if (err != 0) printf("ERROR: writing pipe\n");
+		 	
 		 	setEvent("READ_LOG_EVENT");
 		#else
 		    pthread_mutex_lock(shared_lock->mutex);
-	        while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
 
-	        writePipe("LOGGER_PIPE", pipe_msg);
+				while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
 
-	        *(shared_lock->full) = 1;
-	        pthread_cond_signal(shared_lock->cond2); 
+				err = writePipe(loggerPipe, pipe_msg);
+				if (err != 0) printf("ERROR: writing pipe\n");
+				
+				*(shared_lock->full) = 1;
+				pthread_cond_signal(shared_lock->cond2); 
+				
 		    pthread_mutex_unlock(shared_lock->mutex);
 		#endif
 
@@ -502,7 +510,7 @@ int handler(void* input, int process_mode) {
 	}
 
 	if (sfd.err != 0) {
-		log_output("ERROR: could not send response", 0);
+		printlog("ERROR: could not send response", 0, NULL);
 	}
 
 	#ifndef __linux__

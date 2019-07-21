@@ -11,6 +11,8 @@
 	#include <sys/socket.h>
 	#include <netinet/in.h>
 	#include <netinet/ip.h>
+	#include <errno.h>
+	#include "posix/mapping.h"
 #endif
 
 
@@ -20,7 +22,8 @@
 struct SendFileData {
 	u_int sock;
 	char* response;
-	size_t response_sz;
+	void** maps;
+	long long response_sz;
 	int err;
 };
 
@@ -106,20 +109,19 @@ char* recvAll(int sock, size_t* len) {
 }
 
 
-//eifbewbfkwebkwebfekwbwebkfe
-int sendAll(int sock, char *data, size_t data_sz) {
-
+int sendAll(int sock, char* data, long long file_sz) {
 	void *sendbuf = (void *) malloc(SENDBUF_SIZE);
 	if (sendbuf == NULL) {
 		throwError(1, ALLOC_ERROR);
 		return SEND_ERROR;
 	}
 
-	size_t bytes_sent;
-	size_t bytes_left = data_sz;
-	int n_packet = 0;
+	long long bytes_sent;
+	long long bytes_left = file_sz;
+	long long n_packet = 0;
 
 	while (bytes_left > 0) {
+
 		if (bytes_left < SENDBUF_SIZE) {
 			memcpy((void *) sendbuf, (void *) &data[SENDBUF_SIZE * n_packet++], bytes_left);
 			bytes_sent = send(sock, sendbuf, bytes_left, 0);
@@ -139,4 +141,89 @@ int sendAll(int sock, char *data, size_t data_sz) {
 	free(sendbuf);
 	if (bytes_left > 0) return SEND_ERROR;
 	return 0;
+
+    
+int sendFile(int sock, void** maps, long long file_sz) {
+
+	// int n_maps = file_sz / MAX_MAP_SIZE;
+	// if (file_sz % MAX_MAP_SIZE > 0) n_maps++;
+
+	// void *sendbuf = (void *) malloc(SENDBUF_SIZE);
+	// if (sendbuf == NULL) {
+	// 	printf("Errore in fun - malloc\n");
+	// 	return 1;
+	// }
+
+	// for (int i = 0; i < n_maps; i++) {
+
+	// 	printf("INVIO UNA BANANA %d\n", n_maps);
+
+	// 	void* cur_map = maps[i];
+
+	// 	long long bytes_sent, bytes_left;
+
+	// 	if (i == n_maps - 1) {
+	// 		bytes_left = file_sz % MAX_MAP_SIZE;
+	// 	} else {
+	// 		bytes_left = MAX_MAP_SIZE;
+	// 	}
+
+	// 	int n_packet = 0;
+
+	// 	while (bytes_left > 0) {
+
+	// 		if (bytes_left < SENDBUF_SIZE) {
+	// 			memcpy((void*) sendbuf, &cur_map[SENDBUF_SIZE * n_packet++], bytes_left);
+	// 			bytes_sent = send(sock, sendbuf, bytes_left, 0);
+	// 			bytes_left -= bytes_sent;
+	// 		} else {
+	// 			memcpy((void*) sendbuf, &cur_map[SENDBUF_SIZE * n_packet++], SENDBUF_SIZE);
+	// 			bytes_sent = send(sock, sendbuf, SENDBUF_SIZE, 0);
+	// 			bytes_left -= bytes_sent;
+	// 		}
+
+	// 		if (bytes_sent == -1) {
+	// 			free(sendbuf);
+	// 			return SEND_ERROR;
+	// 		}
+
+	// 	}
+
+	// 	if (bytes_left > 0) {
+	// 		free(sendbuf);
+	// 		printf("Errore in sendAll\n");
+	// 		return 2;
+	// 	}
+
+	// }	
+
+	// free(sendbuf);
+
+	return 0;
+
+}
+
+
+int ipFormatCheck(char* address) {
+	
+	if (strlen(address) < 7 || strlen(address) > 15) return -1;
+
+	int count;
+	char** list = split(address, '.', &count);
+	if (list == NULL) return ALLOC_ERROR;
+
+	if (count != 4) return -1;
+
+	int err = 0;
+
+	for (int i = 0; i < 4; i++) {
+		if (strlen(list[i]) == 0 || strlen(list[i]) > 3 || isNumeric(list[i]) != 0 || atoi(list[i]) < 0 || atoi(list[i]) > 255) {
+			err = -1;
+			break;
+		}
+	}
+
+	freeList(list, count);
+	return err;
+
 }

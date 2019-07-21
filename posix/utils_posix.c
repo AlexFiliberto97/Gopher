@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,8 +25,6 @@ int isRegularFile(const char* path) {
 
 
 int existsDir(char* path) {
-	// char npath[strlen(path)+4];
-	// sprintf(npath, "../%s", path);
 	if (isDirectory(path) == 0) {
 		return 0;
 	}
@@ -36,8 +33,6 @@ int existsDir(char* path) {
 
 
 int existsFile(char* path) {
-	// char npath[strlen(path)+4];
-	// sprintf(npath, "../%s", path);
 	if (isRegularFile(path) == 0) {
 		return 0;
 	}
@@ -62,7 +57,7 @@ int countDirElements(char* path) {
     	return -1;
     }
 
-	while (ep = readdir(dp)) {
+	while ((ep = readdir(dp)) != 0) {
 		if (strcmp(ep->d_name, ".") != 0 &&
 			strcmp(ep->d_name, "..") != 0 &&
 			strcmp(ep->d_name, "_dispnames") != 0) {
@@ -115,7 +110,7 @@ char** listDir(char* path, int* count) {
 
     int i = 0;
 
-	while (ep = readdir(dp)) {
+	while ((ep = readdir(dp)) != 0) {
 		if (strcmp(ep->d_name, ".") != 0 &&
 			strcmp(ep->d_name, "..") != 0 &&
 			strcmp(ep->d_name, "_dispnames") != 0) {
@@ -146,9 +141,9 @@ size_t getFileSize2(char* file_name) {
 
     struct stat st;
      
-    if (stat(file_name, &st) == 0)
+    if (stat(file_name, &st) == 0) {
         return (st.st_size);
-    else
+    } else
         return -1;
 
 }
@@ -159,8 +154,8 @@ size_t getFileSize2(char* file_name) {
 */
 char* readFile(char* path, size_t* size) {
 
-	FILE *fp;
-	fp = fopen(path, "rb");
+	FILE* fp;
+	fp = fopen(path, "r");
 
 	if (fp == NULL) {
 		printf("file non valido");
@@ -175,7 +170,7 @@ char* readFile(char* path, size_t* size) {
 		return NULL;
 	}
 
-	char *buf = (char *) malloc(sz + 1);
+	char* buf = (char *) malloc(sz + 1);
 
 	if (buf == NULL) {
 		printf("Errore in readFile - malloc\n");
@@ -197,20 +192,21 @@ char* readFile(char* path, size_t* size) {
 
 	// return buf;
 
-	char *data = (char *) malloc(sz + 1);
+	char* data = (char*) malloc(sz + 1);
 
 	int idx = 0;
 
 	for (int i = 0; i < strlen(buf); i++) {
-		if (buf[i+1] == '\n' && i + 1 < strlen(buf)) continue;
-		data[idx++] = buf[i];
+	 	if (buf[i] == '\r' && buf[i+1] == '\n' && i + 1 < strlen(buf)) continue;
+	 	data[idx++] = buf[i];
 	}
 	data[idx] = '\0';
 
-	data = (char *) realloc(data, strlen(data) + 1);
+	data = (char*) realloc(data, strlen(data) + 1);
 
 	*size = strlen(data) + 1;
 	free(buf);
+
 	return data;
 
 }

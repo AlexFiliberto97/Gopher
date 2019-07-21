@@ -4,7 +4,8 @@
 
 	#include "mapping.c"
 
-	void* createAndOpenMapping(char*, size_t*, int);
+	// void** createAndOpenMapping(char*, long long*, int);
+	void* createAndOpenMapping(char*, long long*, int);
 	int deleteMapping(void*, size_t);
 
 #endif
