@@ -403,11 +403,11 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 }
 
 
-void* sendResponseFile(void* input) {
-	struct SendFileData* sfd = (struct SendFileData*) input;
-	sfd->err = sendFile(sfd->sock, sfd->maps, sfd->response_sz);
-	return NULL;
-}
+// void* sendResponseFile(void* input) {
+// 	struct SendFileData* sfd = (struct SendFileData*) input;
+// 	sfd->err = sendFile(sfd->sock, sfd->maps, sfd->response_sz);
+// 	return NULL;
+// }
 
 
 void* sendResponse(void* input) {

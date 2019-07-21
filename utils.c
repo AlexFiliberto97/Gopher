@@ -17,13 +17,14 @@ struct Dict {
 	int err;
 };
 
+
 void freeList(char **list, int count) {
-	
 	for (int i = 0; i < count; i++) {
 		free(list[i]);
 	}
 	free(list);
 }
+
 
 int getFileSize(FILE *fp) {
 	
@@ -173,14 +174,6 @@ char* concatList(char** list, u_int count, char separator) {
 		strcat(s, tmp);
 	}
 	return s;
-}
-
-
-void freeList(char** list, int count) {
-	for (int i = 0; i < count; i++) {
-		free(list[i]);
-	}
-	free(list);
 }
 
 

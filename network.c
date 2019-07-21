@@ -142,8 +142,9 @@ int sendAll(int sock, char* data, long long file_sz) {
 	if (bytes_left > 0) return SEND_ERROR;
 	return 0;
 
+}
     
-int sendFile(int sock, void** maps, long long file_sz) {
+// int sendFile(int sock, void** maps, long long file_sz) {
 
 	// int n_maps = file_sz / MAX_MAP_SIZE;
 	// if (file_sz % MAX_MAP_SIZE > 0) n_maps++;
@@ -199,9 +200,9 @@ int sendFile(int sock, void** maps, long long file_sz) {
 
 	// free(sendbuf);
 
-	return 0;
+	// return 0;
 
-}
+// }
 
 
 int ipFormatCheck(char* address) {

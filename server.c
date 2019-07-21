@@ -26,6 +26,7 @@
 #endif
 
 //Prototipes
+void closeSocket(int );
 int getOpts(int, char**);
 int getConfig();
 int serverInit(int, char**);
@@ -449,7 +450,8 @@ void closeSocket(int sock) {
 		closesocket(sock);
 	#else
 		close(sock);
-	#
+	#endif
+}
 
 //Stop and destroy the server
 void serverStop() {
