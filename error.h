@@ -22,7 +22,7 @@
 	#define GRAB_SIZE -25
 	#define NOT_FOUND -26
 	#define INVALID_HANDLE -27
-	#define FILE_SIZE -28
+	#define FILE_SIZE_ERROR -28
 	#define FOLDER_NOT_FOUND -29
 	#define FILE_NOT_FOUND -30
 	#define WRITE_FILE_ERROR -31
@@ -34,7 +34,7 @@
 	#define PIPE_NOT_FOUND -37
 	#define WRITE_PIPE -38
 	#define READ_PIPE -39
-	#define CREATE_MAPPING -40
+	#define CREATE_MAPPING -40 // mapping e shared memory
 	#define OPEN_MAPPING -41
 	#define READ_MAPPING -42
 	#define DELETE_MAPPING -43
@@ -52,6 +52,14 @@
 	#define READ_FILE_ERROR -55
 	#define BAD_ADDRESS -56
 	#define ENVIRONMENT_ERROR -57
+	#define THREAD_JOIN_ERROR -58
+	#define FOLDER_ERROR -59
+	#define OPEN_FILE_ERROR -60
+	#define FORK_ERROR -61
+	#define WAITPID_ERROR -62
+	#define CLOSE_FD_ERROR -63
+	#define SIGEVENT_ERROR -64
+	#define DAEMON_ERROR -65
 	
 	char* errorCode(int);
 	void throwError(int, ...);

@@ -58,7 +58,7 @@ char* readFile(char *fileName, int* ignore) {
 	size_t sz = GetFileSize(hFile, NULL);
 	if (sz == INVALID_FILE_SIZE) {
 		CloseHandle(hFile);
-		throwError(1, FILE_SIZE);
+		throwError(1, FILE_SIZE_ERROR);
 		return NULL;
 	}
 

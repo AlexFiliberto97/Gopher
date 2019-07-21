@@ -26,15 +26,6 @@ void freeList(char **list, int count) {
 }
 
 
-int getFileSize(FILE *fp) {
-	
-	fseek(fp, 0L, SEEK_END);
-	int sz = ftell(fp);
-	rewind(fp);
-	return sz;
-}
-
-
 char* slice(char *text, int lo, int hi) {
 
 	char* sliced = (char *) malloc(hi - lo + 1);
@@ -153,7 +144,7 @@ char* getExtension(char* filename) {
 	return ext;
 }
 
-char* concatList(char** list, u_int count, char separator) {
+char* concatList(char** list, int count, char separator) {
 
 	char* s = (char*) malloc(1);
 

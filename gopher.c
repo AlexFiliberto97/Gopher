@@ -26,7 +26,6 @@
 #endif
 
 
-// #define gopherOptions.root_path "root/"
 #define GOPHER_EXTENSIONS_FILE "config/gopher_ext_to_type.txt"
 #define FILE_NOT_FOUND_MSG "\n>>> Errore: percorso non valido\n"
 #define EMPTY_FOLDER_MSG "\n>>> La cartella richiesta è vuota\n"
@@ -61,11 +60,13 @@ void freeHandlerDataStruct(struct HandlerData* hd, int process_mode) {
 		free(hd);
 	} else {
 		#ifdef __linux__
-			free_shared_memory(hd->cli_data, strlen(hd->cli_data) + 1);
-			free_shared_memory(hd->address, strlen(hd->address) + 1);
-			free_shared_memory(hd->root_path, strlen(hd->root_path) + 1);
-			free_shared_memory(hd->abs_root_path, strlen(hd->abs_root_path) + 1);
-			free_shared_memory(hd, sizeof(hd));
+			int err = 0;
+			err |= free_shared_memory(hd->cli_data, strlen(hd->cli_data) + 1);
+			err |= free_shared_memory(hd->address, strlen(hd->address) + 1);
+			err |= free_shared_memory(hd->root_path, strlen(hd->root_path) + 1);
+			err |= free_shared_memory(hd->abs_root_path, strlen(hd->abs_root_path) + 1);
+			err |= free_shared_memory(hd, sizeof(hd));
+			if (err != 0) throwError(1, err);
 		#endif
 	} 
 }

@@ -10,28 +10,30 @@
 #include <assert.h>
 #include <pthread.h>
 #include "process.h"
-// #include "utils_posix.h"
 #include "../utils.h"
+#include "../error.h"
 
-#define MAX_MAP_SIZE 1073741824
-
-
-
-// struct FileMapping {
-// 	void* map;
-// 	size_t size;
-// };
 
 void* createAndOpenMapping(char* path, long long* size, int process_mode) { 
 
 	// LOCK
 
-	*size = getFileSize2(path);
+	*size = getFileSize(path);
 
 	int fd = open(path, O_RDONLY);
-	assert(fd != -1);
+	
+	if (fd == -1) {
+		throwError(1, CREATE_MAPPING);
+		return NULL;
+	}
 
     void* map = mmap(NULL, *size, PROT_READ, MAP_SHARED, fd, 0);
+
+	if (map == MAP_FAILED) {
+		close(fd);
+		throwError(1, CREATE_MAPPING);
+		return NULL;
+	}
 
     close(fd);
 
@@ -43,15 +45,11 @@ void* createAndOpenMapping(char* path, long long* size, int process_mode) {
 
 
 int deleteMapping(void* map, size_t size) {
-
-	int err = munmap(map, size);
-
-	if (err != 0) return -1;
-
-	return 0;
-
+	return free_shared_memory(map, size);
 }
 
+
+// #define MAX_MAP_SIZE 1073741824
 
 // struct FileMapping {
 // 	void* map;
@@ -64,7 +62,7 @@ int deleteMapping(void* map, size_t size) {
 // 	// LOCK
 // 	pthread_mutex_lock(mutex);
 
-// 	*size = getFileSize2(path);
+// 	*size = getFileSize(path);
 
 // 	int fd = open(path, O_RDONLY);
 // 	assert(fd != -1);
@@ -81,7 +79,7 @@ int deleteMapping(void* map, size_t size) {
 // 	// int fd = open(path, O_RDONLY);
 // 	// assert(fd != -1);
 
-// 	// *size = getFileSize2(path);
+// 	// *size = getFileSize(path);
 
 // 	// int n_maps = *size / MAX_MAP_SIZE;
 // 	// if (*size % MAX_MAP_SIZE > 0) n_maps++;

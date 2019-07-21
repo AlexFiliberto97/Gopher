@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include "../error.h"
 
 #define MAX_THREADS 1024
 
@@ -58,11 +59,11 @@ int startThread(void* (*f)(void*), void* data, int collect) {
 				Threads[i].collect = collect;
 				return Threads[i].id;
 			} else {
-				return -1;
+				return THREAD_ERROR;
 			}
 		}
 	}
-	return -1;
+	return THREAD_UNAVAILABLE;
 }
 
 
@@ -72,9 +73,13 @@ void stopThreadCollector() {
 
 
 void destroyThreads() {
+	int err;
 	for (int i = 0; i < MAX_THREADS; i++) {
 		if (Threads[i].running == 1) {
 			pthread_join(Threads[i].Th, NULL);
+			if (err != 0) {
+				throwError(1, THREAD_JOIN_ERROR);
+			}
 		}
 	}
 }

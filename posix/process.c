@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include "../utils.h"
+#include "../error.h"
 
 #define MAX_PROCESS 1024
 
@@ -34,7 +35,7 @@ int processIndex() {
 			return i;
 		}
 	}
-	return -1;
+	return PROCESS_UNAVAILABLE;
 }
 
 
@@ -43,15 +44,12 @@ int startProcess(void* (*f)(void*), void* data) {
 
 	int index = processIndex();
 
-	if (index == -1) {
-		return -1;
-	}
+	if (index == PROCESS_UNAVAILABLE) return index;
 
 	pid_t pid = fork();
 
 	if (pid < 0) {
-		perror("Errore in fork()\n");
-		return -1;
+		return FORK_ERROR;
 	} else if (pid > 0) {
 		Processes[index].pid = pid;
 		Processes[index].running = 1;
@@ -63,9 +61,8 @@ int startProcess(void* (*f)(void*), void* data) {
     signal(SIGINT, SIG_IGN);
     
 	f((void*) data);
-	exit(0);
 
-	return pid;
+	exit(0);
 
 }
 
@@ -94,10 +91,11 @@ void stopProcessCollector() {
 
 //Destroy the process environment
 void destroyProcess() {
-	int status;
+	int status, err;
 	for (int i = 1; i < MAX_PROCESS; i++) {
 		if (Processes[i].pid > 0) {
-			waitpid(Processes[i].pid, &status, 0);
+			err = waitpid(Processes[i].pid, &status, 0);
+			if (err == -1) throwError(1, WAITPID_ERROR);
 			Processes[i].pid = -1;
 		}
 	}

@@ -107,6 +107,22 @@ char* errorCode(int err) {
 			return strcpy(msg, "-> The specified ip address is not valid.\n");
 		case -57:
 			return strcpy(msg, "-> Environment can't start.\n");
+		case -58:
+			return strcpy(msg, "-> Error joining thread.\n");
+		case -59:
+			return strcpy(msg, "-> Cannot open folder.\n");
+		case -60:
+			return strcpy(msg, "-> Cannot open file.\n");
+		case -61:
+			return strcpy(msg, "-> Error forking process.\n");
+		case -62:
+			return strcpy(msg, "-> Error waitpid.\n");
+		case -63:
+			return strcpy(msg, "-> Error closing file descriptor.\n");
+		case -64:
+			return strcpy(msg, "-> Error setting the signal handler.\n");
+		case -65:
+			return strcpy(msg, "-> Error setting the signal handler.\n");
 	}
 	return NULL;
 }

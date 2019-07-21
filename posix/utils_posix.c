@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include "../error.h"
 
 
 int isDirectory(const char* path) {
@@ -40,10 +41,14 @@ int existsFile(char* path) {
 }
 
 
-/* Function: countDirElements
-* -------------------------------
-*  
-*/
+void freeArray(char **list, int count) {
+	for (int i = 0; i < count; i++) {
+		free(list[i]);
+	}
+	free(list);
+}
+
+
 int countDirElements(char* path) {
 
 	DIR* dp;
@@ -52,10 +57,7 @@ int countDirElements(char* path) {
 
   	int count = 0;
 	
-	if (dp == NULL) {
-		perror("Couldn't open the directory");
-    	return -1;
-    }
+	if (dp == NULL) return FOLDER_ERROR;
 
 	while ((ep = readdir(dp)) != 0) {
 		if (strcmp(ep->d_name, ".") != 0 &&
@@ -78,16 +80,12 @@ int countDirElements(char* path) {
 }
 
 
-/* Function: listDir
-* -------------------------------
-*  
-*/
 char** listDir(char* path, int* count) {
 
 	int n = countDirElements(path);
 
-	if (n == -1) {
-		perror("Errore in countDirElements");
+	if (n == FOLDER_ERROR) {
+		throwError(1, n);
 		return NULL;
 	}
 
@@ -95,7 +93,7 @@ char** listDir(char* path, int* count) {
 
 	char** list = (char**) malloc(sizeof(char*) * n);
 	if(list == NULL) {
-		printf("Errore in listDir - malloc\n");
+		throwError(1, ALLOC_ERROR);
 		return NULL;
 	}
 
@@ -104,7 +102,8 @@ char** listDir(char* path, int* count) {
   	dp = opendir(path);
 
 	if (dp == NULL) {
-		perror("Couldn't open the directory");
+		free(list);
+		throwError(1, FOLDER_ERROR);
     	return NULL;
     }
 
@@ -120,52 +119,58 @@ char** listDir(char* path, int* count) {
 
 			if (isDirectory(tmp_path)) {
 				char* filename = (char*) malloc(strlen(ep->d_name) + 2);
+				if (filename == NULL) {
+					freeArray(list, i);
+					throwError(1, ALLOC_ERROR);
+					return NULL;
+				}
   				sprintf(filename, "%s/", ep->d_name);
   				list[i++] = filename;
 			} else if (isRegularFile(tmp_path)) {
   				char* filename = (char*) malloc(strlen(ep->d_name) + 1);
+				if (filename == NULL) {
+					freeArray(list, i);
+					throwError(1, ALLOC_ERROR);
+					return NULL;
+				}
   				strcpy(filename, ep->d_name);
   				list[i++] = filename;
 			}
   		}
 	}
 
-	(void) closedir(dp);
+	closedir(dp);
 
  	return list;
 
 }
 
 
-size_t getFileSize2(char* file_name) {
+size_t getFileSize(char* file_name) {
 
     struct stat st;
      
     if (stat(file_name, &st) == 0) {
         return (st.st_size);
     } else
-        return -1;
+        return FILE_SIZE_ERROR;
 
 }
 
-/* Function: readFile
-* -------------------------------
-*  
-*/
+
 char* readFile(char* path, size_t* size) {
 
-	FILE* fp;
-	fp = fopen(path, "r");
+	FILE* fp = fopen(path, "rb");
 
 	if (fp == NULL) {
-		printf("file non valido");
+		throwError(1, OPEN_FILE_ERROR);
 		return NULL;
 	}
 
-	size_t sz = getFileSize2(path);
+	size_t sz = getFileSize(path);
 
-	if (sz == -1) {
-		printf("Errore in readFile - getFileSize\n");
+	if (sz == FILE_SIZE_ERROR) {
+		throwError(1, FILE_SIZE_ERROR);
 		fclose(fp);
 		return NULL;
 	}
@@ -173,7 +178,7 @@ char* readFile(char* path, size_t* size) {
 	char* buf = (char *) malloc(sz + 1);
 
 	if (buf == NULL) {
-		printf("Errore in readFile - malloc\n");
+		throwError(1, ALLOC_ERROR);
 		fclose(fp);
 		return NULL;
 	}
@@ -181,7 +186,7 @@ char* readFile(char* path, size_t* size) {
 	size_t read = fread(buf, 1, sz, fp);
 
 	if (read != sz) {
-		printf("Errore in readFile - fread\n");
+		throwError(1, READ_FILE_ERROR);
 		fclose(fp);
 		return NULL;
 	}
@@ -190,9 +195,12 @@ char* readFile(char* path, size_t* size) {
 
 	buf[sz] = '\0';
 
-	// return buf;
-
 	char* data = (char*) malloc(sz + 1);
+
+	if (data == NULL) {
+		throwError(1, ALLOC_ERROR);
+		return NULL;
+	}
 
 	int idx = 0;
 
@@ -204,6 +212,11 @@ char* readFile(char* path, size_t* size) {
 
 	data = (char*) realloc(data, strlen(data) + 1);
 
+	if (data == NULL) {
+		throwError(1, ALLOC_ERROR);
+		return NULL;
+	}
+
 	*size = strlen(data) + 1;
 	free(buf);
 
@@ -213,26 +226,12 @@ char* readFile(char* path, size_t* size) {
 
 
 void* create_shared_memory(size_t size) {
-    // Our memory buffer will be readable and writable:
-    int protection = PROT_READ | PROT_WRITE;
-
-    // The buffer will be shared (meaning other processes can access it), but
-    // anonymous (meaning third-party processes cannot obtain an address for it),
-    // so only this process and its children will be able to use it:
-    int visibility = MAP_ANONYMOUS | MAP_SHARED;
-
-    // The remaining parameters to `mmap()` are not important for this use case,
-    // but the manpage for `mmap` explains their purpose.
-    return mmap(NULL, size, protection, visibility, -1, 0);
+    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
 }
 
 
 int free_shared_memory(void* map, size_t size) {
-
 	int err = munmap(map, size);
-
-	if (err != 0) return -1;
-
+	if (err != 0) return DELETE_MAPPING;
 	return 0;
-
 }
