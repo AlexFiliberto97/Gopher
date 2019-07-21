@@ -4,7 +4,6 @@
 #define MAX_THREADS 1024
 
 struct Thread {
-	
 	HANDLE Th;
 	BOOL running;
 };
@@ -12,15 +11,26 @@ struct Thread {
 static struct Thread Threads[MAX_THREADS];
 
 void initThread() {
-
 	for (int i = 0; i < MAX_THREADS; i++) {
 		Threads[i].Th = NULL;
 		Threads[i].running = FALSE;
 	}
 }
 
-int startThread(void* (*f)(void *), void* data, int ignore){
 
+int joinCollect(int id) {
+
+	int err;
+	WaitForSingleObject(Threads[id].Th, INFINITE);
+	
+	Threads[id].Th = 0;
+	Threads[id].running = 0;	
+	return 0;
+
+}
+
+
+int startThread(void* (*f)(void *), void* data, int ignore){
 	for (int i = 0; i < MAX_THREADS; i++) {
 		if (!Threads[i].running) {
 			Threads[i].Th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)f, data, 0, NULL);

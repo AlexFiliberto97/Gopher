@@ -60,8 +60,7 @@ char* readMapping(HANDLE hMap) {
 }
 
 //Delete an existing file mapping
-int deleteMapping(char *pMap) {
-
+int deleteMapping(char *pMap, int ignore) {
 	BOOL succ;
 	succ = UnmapViewOfFile(pMap);
 	if (!succ) return DELETE_MAPPING;

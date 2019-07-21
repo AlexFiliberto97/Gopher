@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
 	int err;
 
-    // no_daemon(); 
+    no_daemon(); 
     
 	init_env();
 	

@@ -9,6 +9,6 @@
 	HANDLE createMapping(char*, char*, long long*, int);
 	HANDLE openMapping(char*);
 	char* readMapping(HANDLE);
-	int deleteMapping(char*);
+	int deleteMapping(char*, int);
 
 #endif
