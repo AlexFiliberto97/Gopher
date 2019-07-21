@@ -12,7 +12,6 @@ struct Process{
 
 static struct Process Processes[MAX_PROCESS];
 
-//Initialize the process environment 
 void initProcess() {
 
 	for (int i = 0; i < MAX_PROCESS; i++) {
@@ -21,7 +20,6 @@ void initProcess() {
 	}
 }
 
-//Return the first available index for a new process
 int processIndex() {
 
 	for (int i = 0; i < MAX_PROCESS; i++){
@@ -32,7 +30,6 @@ int processIndex() {
 	return PROCESS_UNAVAILABLE;
 }
 
-//Start a new win32 process
 int startProcess(char* name, int argc, char** args) {
 
 	char* cmd = concatList(args, argc, ' ');

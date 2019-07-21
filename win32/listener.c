@@ -6,7 +6,6 @@
 #include "../network.h"
 #include "../error.h"
 
-
 int serverInit() {
 	WSADATA wsaData;
 	int err	= WSAStartup(514, &wsaData);
@@ -17,15 +16,27 @@ int serverInit() {
 	return 0;
 }
 
-
 int main(int argc, char** argv) {
 
-	printf("------------- Sono DIO (pro)cesso -------------\n");
-
 	serverInit();
-	addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));
-	addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
-	addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[3]));
+	int error;
+	error = addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
+
+	error = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
+	
+	error = addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[3]));
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
 
 	struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
 
@@ -42,7 +53,12 @@ int main(int argc, char** argv) {
 	strcpy(hd->root_path, argv[7]);
 	strcpy(hd->abs_root_path, argv[8]);
 
-	handler((void*) hd, 1);
+	error = handler((void*) hd, 1);
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
+
 
 	free(hd->cli_data);
 	free(hd->address);

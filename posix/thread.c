@@ -5,7 +5,6 @@
 
 #define MAX_THREADS 1024
 
-
 struct Thread {
 	pthread_t Th;
 	int running;
@@ -13,10 +12,8 @@ struct Thread {
 	int collect;
 };
 
-
 static struct Thread Threads[MAX_THREADS];
 static int THREAD_COLLECTOR_ALIVE = 1;
-
 
 void initThread() {
 	for (int i = 0; i < MAX_THREADS; i++) {
@@ -25,27 +22,17 @@ void initThread() {
 	}
 }
 
-
-int joinCollect(pthread_t th) {
+int joinCollect(int id) {
 
 	int err;
-	err = pthread_join(th, NULL);
-
+	err = pthread_join(Threads[id].Th, NULL);
 	if (err != 0) return -1;
-
-	for (int i = 0; i < MAX_THREADS; i++) {
-		if (Threads[i].Th == th) {
-			Threads[i].Th = 0;
-			Threads[i].running = 0;
-			printlog("Thread with id %d is now collected\n", Threads[i].id, NULL);
-			return 0;
-		}
-	}
-
-	return -1;
+	
+	Threads[id].Th = 0;
+	Threads[id].running = 0;	
+	return 0;
 
 }
-
 
 void* threadCollector(void* input) {
 	while (THREAD_COLLECTOR_ALIVE == 1) {
@@ -62,15 +49,14 @@ void* threadCollector(void* input) {
 
 }
 
-
-pthread_t startThread(void* (*f)(void*), void* data, int collect) {
+int startThread(void* (*f)(void*), void* data, int collect) {
 	for (int i = 0; i < MAX_THREADS; i++) {
 		if (Threads[i].running == 0) {
 			if (pthread_create(&Threads[i].Th, NULL, f, data) == 0) {
 				Threads[i].running = 1;
 				Threads[i].id = i;
 				Threads[i].collect = collect;
-				return Threads[i].Th;
+				return Threads[i].id;
 			} else {
 				return -1;
 			}

@@ -5,10 +5,9 @@
 	#include <stdio.h>
 	#include "utils_win32.c"
 
-	BOOL WINAPI CtrlHandler(DWORD);
 	int setKeyboardEvent();
 	int countDirElements(char*) ;
-	char* readFile(char*);
+	char* readFile(char*, int*);
 	char** listDir(char*, int*);
 	int existsDir(char*);
 	int appendToFile(char*, char*);

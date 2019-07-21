@@ -83,6 +83,10 @@ void freeHandlerDataStruct(struct HandlerData* hd, int process_mode) {
 */
 char getGopherType(char* path, struct Dict ext_dict) {
 	char* ext = getExtension(path);
+	if (ext == NULL) {
+		return '3';
+	}
+
 	char* type = getAssocValue(ext, ext_dict);
 	char t;
 	if (type == NULL) {
@@ -462,7 +466,7 @@ int handler(void* input, int process_mode) {
 	if (file_request == 1) {
 
 		#ifndef __linux__
-			HANDLE th = (HANDLE) startThread(sendResponse, (void*) &sfd);
+			HANDLE th = (HANDLE) startThread(sendResponse, (void*) &sfd, 0);
 			WaitForSingleObject(th, INFINITE);
 		#else
 			pthread_t th = startThread(sendResponse, (void*) &sfd, 0);

@@ -19,6 +19,7 @@ HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) 
 	OVERLAPPED overlapped = {0};
 	succ = LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK, 0, *size, 0, &overlapped);
 	if (!succ) {
+		throwError(1, LOCK_FILE);
 		CloseHandle(hFile);
 		return NULL;
 	}
@@ -31,6 +32,7 @@ HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) 
 
 	succ = UnlockFileEx(hFile, 0, *size, 0, &overlapped);
 	if (!succ) {
+		throwError(1, UNLOCK_FILE);
 		CloseHandle(hFile);
 		return NULL;
 	}
@@ -45,7 +47,6 @@ HANDLE openMapping(char *mapName) {
 	HANDLE hMap;
 	hMap = OpenFileMapping(FILE_MAP_READ, TRUE, mapName);
 	if (hMap == NULL) return NULL;
-
 	return hMap;
 }
 
@@ -55,7 +56,6 @@ char* readMapping(HANDLE hMap) {
 	char *pMap;
 	pMap = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 	if (pMap == NULL) return NULL;
-	
 	return pMap;
 }
 

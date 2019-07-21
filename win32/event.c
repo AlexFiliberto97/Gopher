@@ -27,7 +27,7 @@ DWORD newEventIndex() {
 			return i;
 		}
 	}
-	return EVENT_UNAVAILABLE;
+	return EVENT_INDEX;
 }	
 
 HANDLE eventHandler(char* name) {
@@ -47,7 +47,6 @@ BOOL setEvent(char* name) {
 
 	BOOL succ = SetEvent(event);
 	if(!succ) return SET_EVENT;
-
 	return 0;
 }
 
@@ -71,7 +70,7 @@ int createEvent(char* name, BOOL pulse) {
 int addEvent(char* name, HANDLE hEvent) {
 
 	DWORD index = newEventIndex();
-	if (index == -1) return index;
+	if (index < 0) return index;
 
 	Events[index].name = (char*) malloc(strlen(name));
 	if (Events[index].name == NULL) return ALLOC_ERROR;
@@ -82,6 +81,7 @@ int addEvent(char* name, HANDLE hEvent) {
 }
 
 void waitEvent(char* name) {
+	
 	HANDLE h = eventHandler(name);
 	if (h == NULL) {
 		return;
@@ -90,7 +90,8 @@ void waitEvent(char* name) {
 	}
 }
 
-void destroyEvents() {
+void destroyEvents() { //Check this
+	
 	for(int i = 0; i < MAX_EVENTS; i++) {
 		if(Events[i].name != NULL) {
 			free(Events[i].name);
