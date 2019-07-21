@@ -1,4 +1,4 @@
 address|127.0.0.1
-port|1
-root|/home/giorgio/Programming/SoIIProject/
-process|1
+port|8080
+root|C:/MinGW/
+process|0

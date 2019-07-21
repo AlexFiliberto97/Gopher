@@ -4,7 +4,7 @@
 #include "../error.h"
 
 //Create a new file mapping
-HANDLE createMapping(char* path, char* mapName, size_t* size, int process_mode) {
+HANDLE createMapping(char* path, char* mapName, long long* size, int process_mode) {
 
 	HANDLE hFile, hMap;
 	BOOL succ;

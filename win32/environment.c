@@ -19,21 +19,13 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 	switch (fdwCtrlType) {
 		case CTRL_C_EVENT:
 		{
-		    printf("Choose an action:\n	   reload: r\n	quit: q\n>>> ");
+		    printf("Choose an action:\n    reload: r\n    quit: q\n>>> ");
 		    char choice[2];
 		    scanf("%s", &choice);
 
 		    if (strcmp(choice, "r") == 0) {
 		    	printf("Reloading server...\n");
 		    	serverStop();
-		        int err = serverReload();
-		        if (err < 0) {
-		        	throwError(1, err);
-		        	SERVER_ALIVE = 0;
-		        	serverStop();
-		        	system("color 0f");
-		        	return TRUE;
-		        } 
 		   		return TRUE;
 		    } else if (strcmp(choice, "q") == 0) {
 		   		printf("Stopping server...\n");

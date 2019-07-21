@@ -1,7 +1,0 @@
-
-127.0.0.1:1169 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
-127.0.0.1:1681 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
-127.0.0.1:2193 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
-127.0.0.1:2705 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
-127.0.0.1:3217 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
-127.0.0.1:3729 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte

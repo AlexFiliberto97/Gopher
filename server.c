@@ -350,20 +350,12 @@ int serverService() {
 			hd->sock = acceptSocket;
 			hd->port = serverOptions.port;
 		
-			#ifndef __linux__
-				int th = startThread((void*) handler, (void*) hd);
-				if (th < 0) {
-					printlog("Errore nell'avvio del thread handler\n", 0 NULL);
-					continue;
-				}
-			#else
-				pthread_t th = startThread((void*) handler, (void*) hd, 1);
-				if (th < 0) {
-					printlog("Errore nell'avvio del thread handler\n", 0, NULL);
-					continue;
-				}
-			#endif
-
+			int th = startThread((void*) handler, (void*) hd, 1);
+			if (th < 0) {
+				throwError(3, SERVER_ERROR_H, th, END_ERROR);
+				closeSocket(acceptSocket);	 
+				continue;
+			}
 		} else {
 
 			#ifndef __linux__

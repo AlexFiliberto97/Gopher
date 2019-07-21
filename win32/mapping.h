@@ -6,7 +6,7 @@
 	#include <windows.h>
 	#include "mapping.c"
 
-	HANDLE createMapping(char*, char*, size_t*, int);
+	HANDLE createMapping(char*, char*, long long*, int);
 	HANDLE openMapping(char*);
 	char* readMapping(HANDLE);
 	int deleteMapping(char*);
