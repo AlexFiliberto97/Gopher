@@ -19,7 +19,7 @@ void initThread() {
 	}
 }
 
-int startThread(void* (*f)(void *), void* data){
+int startThread(void* (*f)(void *), void* data, int ignore){
 
 	for (int i = 0; i < MAX_THREADS; i++) {
 		if (!Threads[i].running) {

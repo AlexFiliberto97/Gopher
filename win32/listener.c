@@ -6,7 +6,6 @@
 #include "../network.h"
 #include "../error.h"
 
-
 int serverInit() {
 	WSADATA wsaData;
 	int err	= WSAStartup(514, &wsaData);
@@ -17,15 +16,27 @@ int serverInit() {
 	return 0;
 }
 
-
 int main(int argc, char** argv) {
 
-	printf("------------- Sono DIO (pro)cesso -------------\n");
-
 	serverInit();
-	addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));
-	addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
-	addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[3]));
+	int error;
+	error = addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
+
+	error = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
+	
+	error = addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[3]));
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
 
 	struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
 
@@ -42,42 +53,17 @@ int main(int argc, char** argv) {
 	strcpy(hd->root_path, argv[7]);
 	strcpy(hd->abs_root_path, argv[8]);
 
-	handler((void*) hd, 1);
-	printf("ejfejbkdceedchbjwvjhbw 1\n");
+	error = handler((void*) hd, 1);
+	if (error < 0) {
+		throwError(2, SERVER_ERROR_H, error);
+		return -1;
+	}
 
 	free(hd->cli_data);
-	printf("ejfejbkdceedchbjwvjhbw 2\n");
 	free(hd->address);
-	printf("ejfejbkdceedchbjwvjhbw 3\n");
 	free(hd->root_path);
-	printf("ejfejbkdceedchbjwvjhbw 4\n");
 	free(hd->abs_root_path);
-	printf("ejfejbkdceedchbjwvjhbw 4.5\n");
 	free(hd);
 
-	printf("ejfejbkdceedchbjwvjhbw 5\n");
-
 	return 0;
-
-	/*
-	serverInit();
-	addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[0]));
-	addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[1]));
-	addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[2]));
-	struct ClientData cd;
-	cd.sock = atoi(argv[5]);
-	cd.data = argv[6];
-
-	char* address = (char*) malloc(strlen(argv[3]) + 1);
-	int* port = (int*) malloc(sizeof(int));
-	char* root_path = (char*) malloc(strlen(argv[7]) + 1);
-
-	strcpy(address, argv[3]);
-	*port = atoi(argv[4]);
-	strcpy(root_path, argv[7]);
-
-	setGopherOptions(address, port, root_path);
-	handler((void*) &cd, 1);
-	return 0;
-	*/
 }

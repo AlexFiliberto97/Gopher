@@ -82,6 +82,10 @@ void freeHandlerDataStruct(struct HandlerData* hd, int process_mode) {
 */
 char getGopherType(char* path, struct Dict ext_dict) {
 	char* ext = getExtension(path);
+	if (ext == NULL) {
+		return '3';
+	}
+
 	char* type = getAssocValue(ext, ext_dict);
 	char t;
 	if (type == NULL) {
@@ -420,9 +424,7 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 
 void* sendResponse(void* input) {
 	struct SendFileData* sfd = (struct SendFileData*) input;
-	printf("IUHASFHUIDUI 1\n");
 	sfd->err = sendAll(sfd->sock, sfd->response, sfd->response_sz);
-	printf("IUHASFHUIDUI 2\n");
 	return NULL;
 }
 
@@ -461,7 +463,7 @@ int handler(void* input, int process_mode) {
 	if (file_request == 1) {
 
 		#ifndef __linux__
-			HANDLE th = (HANDLE) startThread(sendResponse, (void*) &sfd);
+			HANDLE th = (HANDLE) startThread(sendResponse, (void*) &sfd, 0);
 			WaitForSingleObject(th, INFINITE);
 		#else
 			pthread_t th = startThread(sendResponse, (void*) &sfd, 0);

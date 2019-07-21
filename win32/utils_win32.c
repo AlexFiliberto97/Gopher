@@ -22,7 +22,7 @@ int countDirElements(char *path) {
 	if (nPath == NULL) return ALLOC_ERROR;
 
 	sprintf(nPath, "%s*.*", path);
-	HANDLE hFind = FindFirstFile(nPath, &data);
+	HANDLE hFind = FindFirstFile(nPath, &data); //Questo forse va controllato
 	int c = 0;
 	do {
 
@@ -44,7 +44,7 @@ int countDirElements(char *path) {
 	return c;
 }
 
-char *readFile(char *fileName) {
+char* readFile(char *fileName, int* ignore) {
 
 	int err;
 	HANDLE hFile = CreateFile(fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -72,7 +72,7 @@ char *readFile(char *fileName) {
 	if ((err = GetLastError()) != 0 | rf == 0) {
 		CloseHandle(hFile);
 		free(buf);
-		throwError(1, GENERIC_ERROR);
+		throwError(1, READ_FILE_ERROR);
 		return NULL;
 	}
 
@@ -185,7 +185,6 @@ int existsFile(char* path) {
 	if (attributes != INVALID_FILE_ATTRIBUTES) {
 		return 1;
 	}
-
 	return 0;
 }
 

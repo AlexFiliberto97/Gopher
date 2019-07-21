@@ -30,7 +30,7 @@ int newpipeIndex() {
 			return i;
 		}
 	}
-	return PIPE_UNAVAILABLE;
+	return PIPE_INDEX;
 }
 
 int pipeIndex(char* name) {

@@ -35,12 +35,6 @@ int serverReload();
 void serverCleanup(int);
 void serverStop();
 
-
-/*
-	NB: la connessione resta aperta se fallisce malloc realloc o continue in generale
-	NB: la root_path va controllata prima di tutto (creare una gerarchia tra root)
-*/
-
 //Global structs
 struct Opts {
 
@@ -52,36 +46,20 @@ struct Opts {
 	char* abs_root_path;
 };
 
-
 //Global variables
 static struct Opts serverOptions;
 static int SERV_RUNNING = 1;
-
-
-//Set default server options
-/*
-void setDefaultServerOptions() {
-
-	//Forse vanno allocati con malloc chiedi a giorgio
-	serverOptions.sock = -1;
-	serverOptions.address = "127.0.0.1"; 
-	serverOptions.port = 7070;
-	serverOptions.process_mode = 0;
-}
-*/
 
 void freeServerOptions() {
 	
 	serverOptions.sock = -1;
 	serverOptions.port = -1;
 	serverOptions.process_mode = 0;
-	free(serverOptions.address);
-	free(serverOptions.root_path);
-	free(serverOptions.abs_root_path);
+	if (serverOptions.address != NULL) free(serverOptions.address);
+	if (serverOptions.root_path != NULL) free(serverOptions.root_path);
+	if (serverOptions.abs_root_path != NULL) free(serverOptions.abs_root_path);
 }
 
-
-//Get server config from command line
 int getOpts(int argc, char** args) {
 
 	int port = -1, process_mode = -1;
@@ -99,7 +77,6 @@ int getOpts(int argc, char** args) {
 	return 0;
 }
 
-//Get server config from config file
 int getConfig() {
 
 	int config_count;
@@ -146,9 +123,6 @@ int getConfig() {
 	}
 	
 	strcpy(serverOptions.address, address_v);
-	
-	printf("address::: %s  %s\n",serverOptions.address,  address_v);
-
 	serverOptions.port = port;
 	serverOptions.process_mode = process_mode;
 	serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
@@ -162,14 +136,13 @@ int getConfig() {
 	if (last_occ == -1) {
 		freeDict(config_dict);
 		return -1;
-	}//CHECK LATER
-
+	}
 
 	char* rel_root_path = slice(root_path_v, last_occ + 1, strlen(root_path_v));
 	if (rel_root_path == NULL) {
 		freeDict(config_dict);
 		return -1;
-	}//CHECK LATER
+	}
 
 	serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
 	if (serverOptions.root_path == NULL) {
@@ -183,10 +156,7 @@ int getConfig() {
 	return 0;
 }
 
-//Init the winsock
 int serverInit(int argc, char** args) {
-
-	// freeServerOptions();
 
 	int confErr = getConfig();
 	int optsErr = getOpts(argc, args);
@@ -206,11 +176,9 @@ int serverInit(int argc, char** args) {
 			return WSA_ERROR;
 		}
 	#endif
-
 	return 0;
 }
 
-//Start the server
 int serverStart() {
 
 	int err;
@@ -225,8 +193,7 @@ int serverStart() {
 		BOOL optval = TRUE;
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &optval, sizeof(int));
 	#else
-		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
-		
+		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));		
 	#endif
 
 	if (err < 0) {
@@ -249,8 +216,6 @@ int serverStart() {
 	return 0;
 }
 
-
-//Handle the incoming requests
 int serverService() {
 
 	int err = listen(serverOptions.sock, 10);
@@ -266,15 +231,12 @@ int serverService() {
 		fd_set readSet;
 		FD_ZERO(&readSet);
 		FD_SET(serverOptions.sock, &readSet);
-		struct timeval timeout = {2, 0};
+		struct timeval timeout = {1, 0};
 		
 		err = select(serverOptions.sock + 1, &readSet, NULL, NULL, &timeout);
 		if (err == -1) {
-			#ifdef __linux__
-				if (errno == 4) continue;
-			#endif
 			serverCleanup(serverOptions.sock);
-			throwError(3, SERVER_ERROR_H, SELECT_ERROR, -1);
+			throwError(3, SERVER_ERROR_H, SELECT_ERROR, END_ERROR);
 			continue;
 		}
 		
@@ -283,13 +245,14 @@ int serverService() {
 		int cli_addr_len = sizeof(cli_addr);		
 		int acceptSocket = accept(serverOptions.sock, (struct sockaddr*) &cli_addr, (socklen_t*) &cli_addr_len);
 		if (acceptSocket == -1) {
-			throwError(3, SERVER_ERROR_H, ACCEPT_ERROR, -1);
+			throwError(3, SERVER_ERROR_H, ACCEPT_ERROR, END_ERROR);
 			continue;
 		}
 		
 		char* cli_data = getClientAddress(cli_addr);
 		if (cli_data == NULL) {
-			throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
+			throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
+			closeSocket(acceptSocket);
 			continue; 
 		}
 		
@@ -299,7 +262,7 @@ int serverService() {
 			hd->cli_data = (char*) malloc(strlen(cli_data) + 1);
 			hd->address = (char*) malloc(strlen(serverOptions.address) + 1);
 			hd->root_path = (char*) malloc(strlen(serverOptions.root_path) + 1);
-			hd->abs_root_path = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
+			hd->abs_root_path = (char*) malloc(strlen(serverOptions.abs_root_path) + 1); //Check malloc here
 			strcpy(hd->cli_data, cli_data);
 			strcpy(hd->address, serverOptions.address);
 			strcpy(hd->root_path, serverOptions.root_path);
@@ -307,24 +270,16 @@ int serverService() {
 			hd->sock = acceptSocket;
 			hd->port = serverOptions.port;
 		
-			#ifndef __linux__
-			
-				int th = startThread((void*) handler, (void*) hd);
-				if (th < 0) {
-					continue;
-				}
-			#else
-				pthread_t th = startThread((void*) handler, (void*) hd, 1);
-				if (th < 0) {
-					//printf("Errore nell'avvio del thread handler\n");
-					continue;
-				}
-			#endif
+			int th = startThread((void*) handler, (void*) hd, 1);
+			if (th < 0) {
+				throwError(3, SERVER_ERROR_H, th, END_ERROR);
+				closeSocket(acceptSocket);
+				continue;
+			}
 
 		} else {
-
+			
 			#ifndef __linux__
-				int argc = 8;
 				char** cmd = (char**) malloc(sizeof(char*) * 9);
 	   			cmd[0] = (char*) malloc(11);
 	   			cmd[1] = (char*) malloc(11);
@@ -335,6 +290,12 @@ int serverService() {
 	   			cmd[6] = (char*) malloc(11);
 	   			cmd[7] = (char*) malloc(strlen(serverOptions.root_path) + 1);
 	   			cmd[8] = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
+	   			err = checkMalloc(cmd, 9);
+	   			if (err != 0) {
+	   				throwError(3, SERVER_ERROR_H, err, END_ERROR);
+	   				closeSocket(acceptSocket);
+					continue;
+	   			}
 	   			
 	   			sprintf(cmd[0], "%d", acceptSocket);
 	   			sprintf(cmd[1], "%d", getWriter("LOGGER_PIPE"));
@@ -363,18 +324,18 @@ int serverService() {
 			#endif
 
 			if (err < 0) {
-				throwError(2, SERVER_ERROR_H, err);
+				throwError(3, SERVER_ERROR_H, err, END_ERROR);
+				closeSocket(acceptSocket);
 				continue;
 			}
 		}
 	}
-
+	
 	SERV_RUNNING = 1;
 	serverCleanup(serverOptions.sock);
 	return 0;
 }
 
-//Reload the server
 int serverReload() {
 
 	int err;
@@ -396,19 +357,24 @@ int serverReload() {
 	return 0;
 }
 
-
-//Clean the server
 void serverCleanup(int sock) {
-	//freeServerOptions();
+	
+	#ifndef __linux__
+		WSACleanup();
+	#endif
+	closeSocket(sock);
+}
+
+void closeSocket(int sock) {
+	
 	#ifndef __linux__
 		closesocket(sock);
-		WSACleanup();
 	#else
 		close(sock);
 	#endif
 }
 
-//Stop and destroy the server
 void serverStop() {
+	
 	SERV_RUNNING = 0;
 }
