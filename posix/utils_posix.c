@@ -58,7 +58,7 @@ int countDirElements(char* path) {
     	return -1;
     }
 
-	while (ep = readdir(dp)) {
+	while ((ep = readdir(dp)) != 0) {
 		if (strcmp(ep->d_name, ".") != 0 &&
 			strcmp(ep->d_name, "..") != 0 &&
 			strcmp(ep->d_name, "_dispnames") != 0) {
@@ -111,7 +111,7 @@ char** listDir(char* path, int* count) {
 
     int i = 0;
 
-	while (ep = readdir(dp)) {
+	while ((ep = readdir(dp)) != 0) {
 		if (strcmp(ep->d_name, ".") != 0 &&
 			strcmp(ep->d_name, "..") != 0 &&
 			strcmp(ep->d_name, "_dispnames") != 0) {

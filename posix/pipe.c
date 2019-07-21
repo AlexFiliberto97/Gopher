@@ -85,4 +85,5 @@ int destroyLoggerPipe() {
 	close(loggerPipe->handles[0]);
 	close(loggerPipe->handles[1]);
 	free_shared_memory(loggerPipe, sizeof(loggerPipe));
+	return 0;
 }

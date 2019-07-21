@@ -193,8 +193,6 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 	request = fixPath(request);
 	if (request == NULL) return NULL;
 
-	int err;
-
 	//////////////////////////////////////////////////////////////////
 	// Genero la lista dei file contenuti nel path dato
 	int files_count = 0;
@@ -507,7 +505,7 @@ int handler(void* input, int process_mode) {
 	}
 
 	if (sfd.err != 0) {
-		log_output("ERROR: could not send response", 0);
+		printlog("ERROR: could not send response", 0, NULL);
 	}
 
 	#ifndef __linux__

@@ -57,6 +57,9 @@ void* threadCollector(void* input) {
 			} 
 		}
 	}
+
+	return NULL;
+
 }
 
 

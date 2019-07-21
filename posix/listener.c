@@ -8,10 +8,12 @@
 
 void* listener(void* input){
 
-	int* err = (int*) create_shared_memory(sizeof(int));
+	// int* err = (int*) create_shared_memory(sizeof(int));
 
 	struct HandlerData* hd = (struct HandlerData*) input;
 
 	handler((void*) hd, 1);
+
+	return NULL;
 
 }

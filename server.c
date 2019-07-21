@@ -112,6 +112,7 @@ int getConfig() {
 	} 
 
 	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) == 0)) {
+		printlog("ERROR: il percorso root assoluto deve terminare con '/', non deve contenere '\\' e deve essere valido.\n", 0, NULL);
 		freeDict(config_dict);
 		return BAD_ROOT;
 	}
@@ -145,28 +146,34 @@ int getConfig() {
 	}
 
 	strcpy(serverOptions.abs_root_path, root_path_v);
-	int last_occ = lastOccurrence(root_path_v, '/', -1);
-	if (last_occ == -1) {
-		freeDict(config_dict);
-		return -1;
-	} //CHECK LATER
+	
+	if (strcmp(root_path_v, "/") == 0 || strcmp(&root_path_v[1], ":/") == 0) {
+		serverOptions.root_path = (char*) malloc(strlen(root_path_v) + 1);
+		strcpy(serverOptions.root_path, root_path_v);
+	} else {
 
+		int last_occ = lastOccurrence(root_path_v, '/', -1);
+		if (last_occ == -1) {
+			freeDict(config_dict);
+			return -1;
+		} //CHECK LATER
 
-	char* rel_root_path = slice(root_path_v, last_occ + 1, strlen(root_path_v));
-	if (rel_root_path == NULL) {
-		freeDict(config_dict);
-		return -1;
-	} //CHECK LATER
+		char* rel_root_path = slice(root_path_v, last_occ + 1, strlen(root_path_v));
+		if (rel_root_path == NULL) {
+			freeDict(config_dict);
+			return -1;
+		} //CHECK LATER
 
-	serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
-	if (serverOptions.root_path == NULL) {
+		serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
+		if (serverOptions.root_path == NULL) {
+			free(rel_root_path);
+			freeDict(config_dict);
+			return ALLOC_ERROR;
+		}
+		strcpy(serverOptions.root_path, rel_root_path);
 		free(rel_root_path);
-		freeDict(config_dict);
-		return ALLOC_ERROR;
 	}
-	strcpy(serverOptions.root_path, rel_root_path);
 
-	free(rel_root_path);
 	freeDict(config_dict);
 
 	return 0;
@@ -180,7 +187,7 @@ int serverInit(int argc, char** args) {
 	int confErr = getConfig();
 	if (confErr != 0) {
 		throwError(1, confErr);
-		log_output("ERROR: getConfig", 0);
+		printlog("ERROR: getConfig", 0, NULL);
 		return -1;
 	}
 	// int optsErr = getOpts(argc, args);
@@ -257,7 +264,7 @@ int serverService() {
 		return LISTEN_ERROR;
 	} 
 
-	log_output("Server listening on port: %d\n", serverOptions.port);
+	printlog("Server listening on port: %d\n", serverOptions.port, NULL);
 
 	while (SERV_RUNNING == 1) {
 
@@ -273,7 +280,7 @@ int serverService() {
 			#ifdef __linux__
 				if (errno == 4) continue;
 			#endif
-			log_output("ERR %d", errno);
+			printlog("ERR %d", errno, NULL);
 			serverCleanup(serverOptions.sock);
 			throwError(2, SERVER_ERROR_H, SELECT_ERROR);
 			continue;
@@ -311,13 +318,13 @@ int serverService() {
 			#ifndef __linux__
 				int th = startThread((void*) handler, (void*) hd);
 				if (th < 0) {
-					log_output("Errore nell'avvio del thread handler\n", 0);
+					printlog("Errore nell'avvio del thread handler\n", 0 NULL);
 					continue;
 				}
 			#else
 				pthread_t th = startThread((void*) handler, (void*) hd, 1);
 				if (th < 0) {
-					log_output("Errore nell'avvio del thread handler\n", 0);
+					printlog("Errore nell'avvio del thread handler\n", 0, NULL);
 					continue;
 				}
 			#endif

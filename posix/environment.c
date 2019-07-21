@@ -19,7 +19,7 @@ void sighup_handler(int s);
 void sigint_handler(int s);
 int setSighupEvent();
 int setSigintEvent();
-int daemon_skeleton();
+int setup_daemon();
 
 
 void no_daemon() {
@@ -28,8 +28,8 @@ void no_daemon() {
 
 
 void init_env() {
-    if (daemonize == 1 && daemon_skeleton() != 0) {
-        log_output("ERROR: daemon\n", 0);
+    if (daemonize == 1 && setup_daemon() != 0) {
+        printlog("ERROR: daemon\n", 0, NULL);
         exit(1);
     }
 	SERVER_ALIVE = 1;
@@ -45,9 +45,17 @@ int start_env(){
 
 	struct Pipe* loggerPipe = createLoggerPipe();
 
-	if (loggerPipe->err != 0) return -1;
+	if (loggerPipe->err != 0) {
+        printlog("ERROR: createLoggerPipe", 0, NULL);
+        return -1;
+    }
 
 	err = initLocking();
+
+    if (err != 0) {
+        printlog("ERROR: initLocking", 0, NULL);
+        return -1;
+    }
 
 	LOGGER_PID = startProcess(logger, 1, (void*) loggerPipe);
 	if (LOGGER_PID < 0) return -1;
@@ -67,7 +75,6 @@ int clean_env() {
 	destroyProcess();
 	stopThreadCollector();
 	destroyThreads();
-	// destroyPipes();
 	destroyLoggerPipe();
 	closelog();
 	return 0;
@@ -76,14 +83,14 @@ int clean_env() {
 
 // SIGNAL HANDLERS
 void sighup_handler(int s) {
-    log_output("Sighup detected", 0);
-    log_output("Reloading server...", 0);
+    printlog("Sighup detected", 0, NULL);
+    printlog("Reloading server...", 0, NULL);
     serverStop();
 }
 
 void sigint_handler(int s) {
-    log_output("Sigint detected", 0);
-    log_output("Quitting server...", 0);
+    printlog("Sigint detected", 0, NULL);
+    printlog("Quitting server...", 0, NULL);
     SERVER_ALIVE = 0;
     serverStop();
 }
@@ -112,7 +119,7 @@ int setSigintEvent() {
     return 0;
 }
 
-int daemon_skeleton() {
+int setup_daemon() {
 
     pid_t daem1 = fork();
 
@@ -164,7 +171,6 @@ int daemon_skeleton() {
     // chdir("/");
 
     // Close all open file descriptors
-    int x;
     for (int x = 0; x < sysconf(_SC_OPEN_MAX); x++) {
         close(x);
     }

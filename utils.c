@@ -129,7 +129,6 @@ int countSplitChar(char *text, char delimiter) {
 */
 char** split(char* text, char delimiter, int* c) {
 
-	int* pos;
 	int count = countSplitChar(text, delimiter);
 
 	*c = count;
@@ -141,7 +140,6 @@ char** split(char* text, char delimiter, int* c) {
 		return NULL;
 	}
 
-	char* tmp;
 	int tmp_count = 0;
 	int x = 0;
 
@@ -391,7 +389,7 @@ int isNumeric(char* str) {
 }
 
 
-void log_output(char* format, int n) {
+void printlog(char* format, int n, char* s) {
     printf(format, n);
     #ifdef __linux__
         syslog(LOG_INFO, format, n);
