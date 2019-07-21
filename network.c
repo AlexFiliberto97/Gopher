@@ -222,3 +222,28 @@ int sendFile(int sock, void** maps, long long file_sz) {
 	return 0;
 
 }
+
+
+int ipFormatCheck(char* address) {
+	
+	if (strlen(address) < 7 || strlen(address) > 15) return -1;
+
+	int count;
+	char** list = split(address, '.', &count);
+	if (list == NULL) return ALLOC_ERROR;
+
+	if (count != 4) return -1;
+
+	int err = 0;
+
+	for (int i = 0; i < 4; i++) {
+		if (strlen(list[i]) == 0 || strlen(list[i]) > 3 || isNumeric(list[i]) != 0 || atoi(list[i]) < 0 || atoi(list[i]) > 255) {
+			err = -1;
+			break;
+		}
+	}
+
+	freeList(list, count);
+	return err;
+
+}

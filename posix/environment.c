@@ -57,7 +57,8 @@ int start_env(){
         return -1;
     }
 
-	LOGGER_PID = startProcess(logger, 1, (void*) loggerPipe);
+	// LOGGER_PID = startProcess(logger, 1, (void*) loggerPipe);
+    LOGGER_PID = startProcess(logger, (void*) loggerPipe);
 	if (LOGGER_PID < 0) return -1;
 
 	//Creating the garbage collector for threads e processes

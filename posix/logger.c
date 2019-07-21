@@ -6,7 +6,7 @@
 #include <string.h> 
 #include <signal.h>
 #include "pipe.h"
-#include "locking.h"
+#include "mutex.h"
 
 
 void* logger(void* input) {
@@ -25,7 +25,6 @@ void* logger(void* input) {
 	        msg = readPipe(loggerPipe);
 
 			if (msg != NULL) {
-				printf("%s\n", msg);
 				logFile = fopen("log.txt", "a+b");
 				fwrite(msg, 1, strlen(msg), logFile);
 				fclose(logFile);

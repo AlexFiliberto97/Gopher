@@ -37,7 +37,7 @@ int joinCollect(pthread_t th) {
 		if (Threads[i].Th == th) {
 			Threads[i].Th = 0;
 			Threads[i].running = 0;
-			printf("Thread with id %d is now collected\n", Threads[i].id);
+			printlog("Thread with id %d is now collected\n", Threads[i].id, NULL);
 			return 0;
 		}
 	}
@@ -53,7 +53,7 @@ void* threadCollector(void* input) {
 			if (Threads[i].collect == 1 && Threads[i].running == 1 && pthread_tryjoin_np(Threads[i].Th, NULL) == 0) {
 				Threads[i].Th = 0;
 				Threads[i].running = 0;
-				printf("Thread with id %d is now collected\n", Threads[i].id);
+				printlog("Thread with id %d is now collected\n", Threads[i].id, NULL);
 			} 
 		}
 	}

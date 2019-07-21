@@ -101,12 +101,60 @@ int getConfig() {
 	if (config_dict.err != 0) return ALLOC_ERROR;
 	freeList(config_assoc_list, config_count);
 
+	// ADDRESS
 	char* address_v = getAssocValue("address", config_dict);
+
+	if (address_v == NULL) {
+		freeDict(config_dict);
+		return ALLOC_ERROR;
+	} else if (ipFormatCheck(address_v) != 0) {
+		freeDict(config_dict);
+		return -909; // BAD_ADDRESS
+	}
+
+	serverOptions.address = (char*) malloc(strlen(address_v) + 1);
+	if (serverOptions.address == NULL) { 
+		freeDict(config_dict);
+		return ALLOC_ERROR;
+	}
+	strcpy(serverOptions.address, address_v);
+
+	// PORT
 	char* port_v = getAssocValue("port", config_dict);
+
+	if (port_v == NULL) {
+		freeDict(config_dict);
+		return ALLOC_ERROR;
+	} 
+
+	int port = atoi(port_v);
+	if (checkPort(port) != 0) {
+		freeDict(config_dict);
+		return BAD_PORT;
+	}
+	serverOptions.port = port;
+
+	// PROCESS MODE
 	char* process_mode_v = getAssocValue("process", config_dict);
+
+	if (process_mode_v == NULL) {
+		freeDict(config_dict);
+		return ALLOC_ERROR;
+	} 
+
+
+	int process_mode = atoi(process_mode_v);
+
+	if (process_mode != 0 && process_mode != 1) {
+		freeDict(config_dict);
+		return BAD_PMODE;
+	}
+	serverOptions.process_mode = process_mode;
+
+	// ROOT PATH
 	char* root_path_v = getAssocValue("root", config_dict);
 
-	if (address_v == NULL || port_v == NULL || root_path_v == NULL || process_mode_v == NULL) {
+	if (root_path_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} 
@@ -117,28 +165,6 @@ int getConfig() {
 		return BAD_ROOT;
 	}
 
-	int port = atoi(port_v);
-	int process_mode = atoi(process_mode_v);
-
-	if (checkPort(port) != 0) {
-		freeDict(config_dict);
-		return BAD_PORT;
-	}
-
-	if (process_mode != 0 && process_mode != 1) {
-		freeDict(config_dict);
-		return BAD_PMODE;
-	}
-
-	serverOptions.address = (char*) malloc(strlen(address_v) + 1);
-	if (serverOptions.address == NULL) { 
-		freeDict(config_dict);
-		return ALLOC_ERROR;
-	}
-	
-	strcpy(serverOptions.address, address_v);
-	serverOptions.port = port;
-	serverOptions.process_mode = process_mode;
 	serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
 	if (serverOptions.abs_root_path == NULL) {
 		freeDict(config_dict);
@@ -366,7 +392,7 @@ int serverService() {
 				strcpy(hd->abs_root_path, serverOptions.abs_root_path);
 				hd->sock = acceptSocket;
 				hd->port = serverOptions.port;
-				err = startProcess((void*) listener, 1, (void*) hd);
+				err = startProcess((void*) listener, (void*) hd);
 			#endif
 
 			if (err < 0) {

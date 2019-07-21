@@ -19,7 +19,6 @@
 	#include <pthread.h>
 	#include "posix/utils_posix.h"
 	#include "posix/pipe.h"
-	// #include "posix/locking.h"
 	#include "posix/logger.h"
 	#include "posix/mapping.h"
 	#include "posix/thread.h"
@@ -488,13 +487,15 @@ int handler(void* input, int process_mode) {
 		 	setEvent("READ_LOG_EVENT");
 		#else
 		    pthread_mutex_lock(shared_lock->mutex);
-	        while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
 
-	        err = writePipe(loggerPipe, pipe_msg);
-	        if (err != 0) printf("ERROR: writing pipe\n");
-	        
-	        *(shared_lock->full) = 1;
-	        pthread_cond_signal(shared_lock->cond2); 
+				while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
+
+				err = writePipe(loggerPipe, pipe_msg);
+				if (err != 0) printf("ERROR: writing pipe\n");
+				
+				*(shared_lock->full) = 1;
+				pthread_cond_signal(shared_lock->cond2); 
+				
 		    pthread_mutex_unlock(shared_lock->mutex);
 		#endif
 

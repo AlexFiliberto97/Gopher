@@ -29,50 +29,6 @@ int getFileSize(FILE *fp) {
 }
 
 
-/* Function: readFile
-* -------------------------------
-*  
-*/
-// char *readFile(char *path, size_t *size) {
-
-// 	FIL *fp;E
-// 	fp = fopen(path, "rb");
-
-// 	if (fp == NULL) {
-// 		printf("file non valido");
-// 		return NULL;
-// 	}
-
-// 	size_t sz = getFileSize(fp);
-
-// 	if (sz == -1) {
-// 		printf("Errore in readFile - getFileSize\n");
-// 		fclose(fp);
-// 		return NULL;
-// 	}
-
-// 	char *buf = (char *) malloc(sz);
-
-// 	if (buf == NULL) {
-// 		printf("Errore in readFile - malloc\n");
-// 		fclose(fp);
-// 		return NULL;
-// 	}
-
-// 	size_t read = fread(buf, 1, sz, fp);
-
-// 	if (read != sz) {
-// 		printf("Errore in readFile - fread\n");
-// 		fclose(fp);
-// 		return NULL;
-// 	}
-
-// 	*size = sz;
-// 	fclose(fp);
-// 	return buf;
-// }
-
-
 /* Function: slice
 * -------------------------------
 *  
@@ -382,10 +338,10 @@ int searchList(char* item, char** list, int length) {
 int isNumeric(char* str) {
 	for (int i = 0; i < strlen(str); i++) {
 		if (!(str[i] >= 48 && str[i] < 58)) {
-			return 0;
+			return -1;
 		}
 	}
-	return 1;
+	return 0;
 }
 
 

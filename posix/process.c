@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "../utils.h"
 
 #define MAX_PROCESS 1024
 
@@ -38,7 +38,8 @@ int processIndex() {
 }
 
 
-int startProcess(void* (*f)(void*), int argc, char** argv) {
+// int startProcess(void* (*f)(void*), int argc, char** argv) {
+int startProcess(void* (*f)(void*), void* data) {
 
 	int index = processIndex();
 
@@ -61,7 +62,7 @@ int startProcess(void* (*f)(void*), int argc, char** argv) {
     signal(SIGHUP, SIG_IGN);
     signal(SIGINT, SIG_IGN);
     
-	f((void*) argv);
+	f((void*) data);
 	exit(0);
 
 	return pid;
