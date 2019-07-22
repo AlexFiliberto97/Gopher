@@ -20,6 +20,7 @@ void sigint_handler(int);
 int setSighupEvent();
 int setSigintEvent();
 int setup_daemon();
+int killLogger();
 
 
 void no_daemon() {
@@ -75,7 +76,7 @@ int start_env(){
 }
 
 int clean_env() {
-	kill(LOGGER_PID, SIGKILL);
+    killLogger();
 	destroySharedLock();
 	freeServerOptions();
 	stopProcessCollector();
@@ -85,6 +86,38 @@ int clean_env() {
 	destroyLoggerPipe();
 	closelog();
 	return 0;
+}
+
+
+int killLogger() {
+    
+    int err;
+    char* msg = "TERMINATE_LOGGER";
+
+    char* pipe_msg = (char*) malloc(strlen(msg) + 1);
+     if (pipe_msg == NULL) return ALLOC_ERROR;
+
+    strcpy(pipe_msg, msg);
+
+    pthread_mutex_lock(shared_lock->mutex);
+
+        while (*(shared_lock->full) == 1) pthread_cond_wait(shared_lock->cond1, shared_lock->mutex);
+
+        err = writePipe(loggerPipe, pipe_msg);
+        if (err != 0) {
+            throwError(1, err);
+        }
+        
+        *(shared_lock->full) = 1;
+        pthread_cond_signal(shared_lock->cond2); 
+        
+    pthread_mutex_unlock(shared_lock->mutex);
+
+    int status;
+    waitpid(LOGGER_PID, &status, 0);
+
+    return 0;
+
 }
 
 

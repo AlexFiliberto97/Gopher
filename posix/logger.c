@@ -9,9 +9,6 @@
 #include "mutex.h"
 
 
-// int LOGGER_ALIVE = 1;
-
-
 void* logger(void* input) {
 
 	struct Pipe* loggerPipe = (struct Pipe*) input;
@@ -28,6 +25,11 @@ void* logger(void* input) {
 	        msg = readPipe(loggerPipe);
 
 			if (msg == NULL) continue;
+
+			if (strcmp(msg, "TERMINATE_LOGGER") == 0) {
+				free(msg);
+				break;
+			}
 
 			logFile = fopen("log.txt", "a+b");
 			fwrite(msg, 1, strlen(msg), logFile);

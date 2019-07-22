@@ -26,6 +26,17 @@ void freeList(char **list, int count) {
 }
 
 
+char* cpyalloc(char* source) {
+	char* res = (char*) malloc(strlen(source) + 1);
+	if (res == NULL) {
+		throwError(1, ALLOC_ERROR);
+		return NULL;
+	}
+	strcpy(res, source);
+	return res;
+}
+
+
 char* slice(char *text, int lo, int hi) {
 
 	char* sliced = (char *) malloc(hi - lo + 1);

@@ -111,12 +111,18 @@ int getConfig() {
 		return BAD_ADDRESS; // BAD_ADDRESS
 	}
 
-	serverOptions.address = (char*) malloc(strlen(address_v) + 1);
+	// serverOptions.address = (char*) malloc(strlen(address_v) + 1);
+	// if (serverOptions.address == NULL) { 
+	// 	freeDict(config_dict);
+	// 	return ALLOC_ERROR;
+	// }
+	// strcpy(serverOptions.address, address_v);
+
+	serverOptions.address = cpyalloc(address_v);
 	if (serverOptions.address == NULL) { 
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
-	strcpy(serverOptions.address, address_v);
 
 	// PORT
 	char* port_v = getAssocValue("port", config_dict);
@@ -141,7 +147,6 @@ int getConfig() {
 		return ALLOC_ERROR;
 	} 
 
-
 	int process_mode = atoi(process_mode_v);
 
 	if (process_mode != 0 && process_mode != 1) {
@@ -158,19 +163,23 @@ int getConfig() {
 		return ALLOC_ERROR;
 	} 
 
-	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) == 0)) {
+	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) != 0)) {
 		// printlog("ERROR: il percorso root assoluto deve terminare con '/', non deve contenere '\\' e deve essere valido.\n", 0, NULL);
 		freeDict(config_dict);
 		return BAD_ROOT;
 	}
 
-	serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
+	serverOptions.abs_root_path = cpyalloc(root_path_v);
+
+	// serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
 	if (serverOptions.abs_root_path == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
 
-	strcpy(serverOptions.abs_root_path, root_path_v);
+	// strcpy(serverOptions.abs_root_path, root_path_v);
+
+
 	
 	if (strcmp(root_path_v, "/") == 0 || strcmp(&root_path_v[1], ":/") == 0) {
 		serverOptions.root_path = (char*) malloc(strlen(root_path_v) + 1);
@@ -189,13 +198,14 @@ int getConfig() {
 			return -1;
 		} //CHECK LATER
 
-		serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
+		serverOptions.root_path = cpyalloc(rel_root_path);
+		// serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
 		if (serverOptions.root_path == NULL) {
 			free(rel_root_path);
 			freeDict(config_dict);
 			return ALLOC_ERROR;
 		}
-		strcpy(serverOptions.root_path, rel_root_path);
+		// strcpy(serverOptions.root_path, rel_root_path);
 		free(rel_root_path);
 	}
 
@@ -334,19 +344,18 @@ int serverService() {
 				closeSocket(acceptSocket);
 				continue; 
 			}
-			hd->cli_data = (char*) malloc(strlen(cli_data) + 1);
-			hd->address = (char*) malloc(strlen(serverOptions.address) + 1);
-			hd->root_path = (char*) malloc(strlen(serverOptions.root_path) + 1);
-			hd->abs_root_path = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
+
+			hd->cli_data = cpyalloc(cli_data);
+			hd->address = cpyalloc(serverOptions.address);
+			hd->root_path = cpyalloc(serverOptions.root_path);
+			hd->abs_root_path = cpyalloc(serverOptions.abs_root_path);
+
 			if (hd->cli_data == NULL || hd->address == NULL || hd->root_path == NULL || hd->abs_root_path == NULL ) {
 				throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
 				closeSocket(acceptSocket);
 				continue; 
 			}
-			strcpy(hd->cli_data, cli_data);
-			strcpy(hd->address, serverOptions.address);
-			strcpy(hd->root_path, serverOptions.root_path);
-			strcpy(hd->abs_root_path, serverOptions.abs_root_path);
+			
 			hd->sock = acceptSocket;
 			hd->port = serverOptions.port;
 		

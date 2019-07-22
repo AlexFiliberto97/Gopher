@@ -4,6 +4,7 @@
 
 	#include "utils.c"
 
+	char* cpyalloc(char*);
 	char* slice(char*, int, int);
 	int countChar(char*, char, int**);
 	char** splitPos(char*, int*, int);

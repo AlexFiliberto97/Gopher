@@ -92,7 +92,7 @@ char** getDispNamesAssoc(char* path, int *count) {
 	char* fname = "_dispnames";
 	char dispNamesPath[strlen(path)+strlen(fname)+1];
 	sprintf(dispNamesPath, "%s%s", path, fname);
-	if (existsFile(dispNamesPath) == 0) return NULL;
+	if (existsFile(dispNamesPath) != 0) return NULL;
 
 	int n;
 	char** lista = readlines(dispNamesPath, &n);
@@ -102,66 +102,35 @@ char** getDispNamesAssoc(char* path, int *count) {
 	return lista;
 }
 
-/* Function: getItem
-* -------------------------------
-*  
-*/
+
 char* getItem(char* path, int *type) {
 
 	char* item = NULL;
 
-	int last_slash;
-	for (int i = strlen(path)-1; i >= 0; i--) {
-		if (path[i] == '/' && i != strlen(path)-1) {
-			last_slash = i;
-			break;
+	if (existsDir(path) == 0) {
+		item = (char*) malloc(strlen(path) + 2);
+		if (item == NULL) {
+			*type = -1;
+			return NULL;
 		}
-	}
-
-	char* itemPath = slice(path, 0, last_slash + 1);
-	char* itemName;
-	if (path[strlen(path)-1] == '/') {
-		itemName = slice(path, last_slash + 1, strlen(path)-1);
-	} else {
-		itemName = slice(path, last_slash + 1, strlen(path));
-	}
-	char* itemNameSlash = (char*) malloc(sizeof(char) * (strlen(itemName) + 2));
-	sprintf(itemNameSlash, "%s/", itemName);
-
-	int files_count;
-	char** files_list = listDir(itemPath, &files_count);
-
-	if (files_list == NULL) {
-		printf("Errore in getItem - listDir\n");
-		return NULL;
-	}
-
-	if (searchList(itemNameSlash, files_list, files_count) != -1) {
-		item = (char*) malloc(strlen(itemPath) + strlen(itemNameSlash) + 1);
-		sprintf(item, "%s%s", itemPath, itemNameSlash);
+		sprintf(item, "%s/", path);
 		*type = 1;
-	} else if (searchList(itemName, files_list, files_count) != -1) {
-		printf("%s\n", itemName);
-		item = (char*) malloc(strlen(itemPath) + strlen(itemName) + 1);
-		sprintf(item, "%s%s", itemPath, itemName);
+	} else if (existsFile(path) == 0) {
+		item = cpyalloc(path);
+		if (item == NULL) {
+			*type = -1;
+			return NULL;
+		}
 		*type = 0;
 	} else {
 		*type = -1;
 	}
 
-	freeList(files_list, files_count);
-	free(itemPath);
-	free(itemName);
-	free(itemNameSlash);
-
-	return item;
+	return item;	
 
 }
 
-/* Function: gopherListDir
-* -------------------------------
-*  
-*/
+
 char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 
 	char* request = (char*) malloc(strlen(req) + 3);
@@ -325,12 +294,8 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 	int type = -1;
 	char* req_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);
 	if (req_path == NULL) {
-		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
-		if (response == NULL) {
-			throwError(1. ALLOC_ERROR);
-			return NULL;
-		}
-		strcpy(response, SERVER_ERROR_MSG);
+		response = cpyalloc(SERVER_ERROR_MSG);
+		if (response == NULL) return NULL;
 		*response_sz = strlen(response) + 1;
 		return response;
 	}
@@ -338,9 +303,8 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 
 	req_path = fixPath(req_path);
 	if (req_path == NULL) {
-		response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
+		response = cpyalloc(SERVER_ERROR_MSG);
 		if (response == NULL) return NULL;
-		strcpy(response, SERVER_ERROR_MSG);
 		*response_sz = strlen(response) + 1;
 		return response;
 	}
@@ -371,33 +335,21 @@ char* handleRequest(char* request, size_t* response_sz, int* mapping, struct Han
 		int count;
 		char** list = gopherListDir(item, request, &count, hd);
 		if (list == NULL) {
-			response = (char*) malloc(strlen(EMPTY_FOLDER_MSG) + 1);
-			if (response == NULL) {
-				throwError(1, ALLOC_ERROR);
-				return NULL;
-			}
-			strcpy(response, EMPTY_FOLDER_MSG);
+			response = cpyalloc(EMPTY_FOLDER_MSG);
+			if (response == NULL) return NULL;
 		} else {
 			response = concatList(list, count, '\n');
 			if (response == NULL) {
-				response = (char*) malloc(strlen(SERVER_ERROR_MSG) + 1);
-				if (response == NULL) {
-					throwError(1, ALLOC_ERROR);
-					return NULL;
-				}
-				strcpy(response, SERVER_ERROR_MSG);
+				response = cpyalloc(SERVER_ERROR_MSG);
+				if (response == NULL) return NULL;
 			}
 			freeList(list, count);
 		}
 		*response_sz = strlen(response);
 
 	} else if (type == -1) { // NOT FOUND
-		response = (char*) malloc(strlen(FILE_NOT_FOUND_MSG) + 1);
-		if (response == NULL) {
-			throwError(1, ALLOC_ERROR);
-			return NULL;
-		}
-		strcpy(response, FILE_NOT_FOUND_MSG);
+		response = cpyalloc(FILE_NOT_FOUND_MSG);
+		if (response == NULL) return NULL;
 		*response_sz = strlen(response);
 	}
 
@@ -440,14 +392,12 @@ int handler(void* input, int process_mode) {
     printf("Bytes received: %ld\n", msg_len);
     printf("Data received: %s\n\n", msg);
 
-    char* request = (char*) malloc(strlen(msg) + 1);
-	
+	char* request = cpyalloc(msg);
 	if (request == NULL) {
 		free(msg);
 		return ALLOC_ERROR;
 	}
-
-    strcpy(request, msg);
+	free(msg);
 
     size_t response_sz;
     int file_request = 0;
@@ -456,7 +406,6 @@ int handler(void* input, int process_mode) {
     char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode);
     
 	if (response == NULL) {
-		free(msg);
 		free(request);
 		return SERVER_ERROR_H;
 	}
@@ -484,7 +433,6 @@ int handler(void* input, int process_mode) {
 		int th_id = startThread(sendResponse, (void*) &sfd, 0);
 
 		if (th_id < 0 || joinCollect(th_id) != 0) {
-			free(msg);
 			free(request);
 			freeHandlerDataStruct(hd, process_mode);
 			throwError(1, th_id);
@@ -551,7 +499,6 @@ int handler(void* input, int process_mode) {
 		close(hd->sock);
 	#endif
 
-	free(msg);
 	free(request);
 
 	if (file_request == 0) {
