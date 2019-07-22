@@ -117,9 +117,9 @@ void addPipe(HANDLE hRead, HANDLE hWrite) {
 int writePipe(char* msg) {
 
 	char sz[11];
-	sprintf(sz, "%d", (int) strlen(msg) + 1);
+	sprintf(sz, "%d", strlen(msg) + 1);
 
-	char size[11];
+	char size[12];
 
 	for (int i = 0; i < 11; i++) {
 		if (i < 11 - strlen(sz)) {
@@ -128,6 +128,7 @@ int writePipe(char* msg) {
 			size[i] = sz[i-11+strlen(sz)];
 		}
 	}
+	size[11] = '\0';
 
 	char* comp_msg = (char*) malloc(strlen(msg) + strlen(size) + 1);
 	if (comp_msg == NULL) return ALLOC_ERROR;
