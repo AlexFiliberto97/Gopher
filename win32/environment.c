@@ -72,7 +72,6 @@ void consoleDecoration(){
 void init_env() {
 
 	SERVER_ALIVE = 1;
-	initPipes();
 	initEvents();
 	initThread();
 	initProcess();
@@ -86,7 +85,7 @@ int start_env() {
 	BOOL succ = SetConsoleCtrlHandler(CtrlHandler, TRUE);
 	if (!succ) return CONSOLE_HANDLER;
 	
-	int success = createPipe("LOGGER_PIPE");
+	int success = createLoggerPipe();
 	if (success != 0) return success;
 
 	success = createEvent("WRITE_LOG_EVENT", TRUE);
@@ -129,6 +128,6 @@ void clean_env() {
 	freeServerOptions();
 	destroyProcess();
 	destroyThreads();
-	destroyPipes();
+	destroyLoggerPipe();
 	destroyEvents();
 }

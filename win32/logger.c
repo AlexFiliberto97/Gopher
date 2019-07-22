@@ -17,7 +17,7 @@ int setKeyboardEvent() {
 }
 
 void init_env() {
-	initPipes();	
+	//initPipes();	
 	initEvents();
 }
 
@@ -32,12 +32,7 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 	
-	err = addPipe("LOGGER_PIPE", (HANDLE) atoi(argv[0]), NULL);
-	if (err != 0) {
-		throwError(2, SERVER_ERROR_H, err);
-		return -1;
-	}
-
+	addPipe((HANDLE) atoi(argv[0]), NULL);
 	err = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[1]));
 	if (err != 0) {
 		throwError(2, SERVER_ERROR_H, err);

@@ -20,12 +20,8 @@ int main(int argc, char** argv) {
 
 	serverInit();
 	int error;
-	error = addPipe("LOGGER_PIPE", NULL, (HANDLE) atoi(argv[1]));
-	if (error < 0) {
-		throwError(2, SERVER_ERROR_H, error);
-		return -1;
-	}
-
+	
+	addPipe(NULL, (HANDLE) atoi(argv[1]));
 	error = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
 	if (error < 0) {
 		throwError(2, SERVER_ERROR_H, error);
