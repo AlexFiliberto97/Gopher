@@ -30,11 +30,16 @@ void initProcess() {
 
 
 int processIndex() {
+	
+	// LOCK MUTEX
+
 	for (int i = 0; i < MAX_PROCESS; i++) {
 		if (Processes[i].running == 0) {
 			return i;
 		}
 	}
+
+	// UNLOCK MUTEX
 	return PROCESS_UNAVAILABLE;
 }
 

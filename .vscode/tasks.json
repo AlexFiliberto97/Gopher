@@ -7,9 +7,9 @@
             "command": "/usr/bin/gcc",
             "args": [
                 "-g",
-                "${file}",
+                "/home/giorgio/Programming/SoIIProject/main.c",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}",
+                "/home/giorgio/Programming/SoIIProject/main",
                 "-pthread",
                 "-D_GNU_SOURCE"
             ],

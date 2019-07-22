@@ -76,7 +76,7 @@ void destroyThreads() {
 	int err;
 	for (int i = 0; i < MAX_THREADS; i++) {
 		if (Threads[i].running == 1) {
-			pthread_join(Threads[i].Th, NULL);
+			err = pthread_join(Threads[i].Th, NULL);
 			if (err != 0) {
 				throwError(1, THREAD_JOIN_ERROR);
 			}
