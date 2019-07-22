@@ -38,7 +38,7 @@ int startThread(void* (*f)(void *), void* data, int ignore){
 				return THREAD_ERROR;
 			} else {
 				Threads[i].running = TRUE;
-				return (int) Threads[i].Th;
+				return i;
 			}
 		}
 	}

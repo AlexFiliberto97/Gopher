@@ -177,10 +177,10 @@ int existsDir(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
 	if ((attributes != INVALID_FILE_ATTRIBUTES) && (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
-		return 1;
+		return 0;
 	}
 	
-	return 0;
+	return -1;
 }
 
 
@@ -188,9 +188,9 @@ int existsFile(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
 	if (attributes != INVALID_FILE_ATTRIBUTES) {
-		return 1;
+		return 0;
 	}
-	return 0;
+	return -1;
 }
 
 

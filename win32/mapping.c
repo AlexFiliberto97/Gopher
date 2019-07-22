@@ -15,7 +15,7 @@ HANDLE createMapping(char* path, char* mapName, long long* size, int process_mod
 		return NULL;
 	}
 
-	*size = GetFileSize(hFile, NULL);
+	*size = (long long) GetFileSize(hFile, NULL);
 	OVERLAPPED overlapped = {0};
 	succ = LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK, 0, *size, 0, &overlapped);
 	if (!succ) {

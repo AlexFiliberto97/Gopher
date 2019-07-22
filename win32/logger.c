@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 		throwError(2, SERVER_ERROR_H, err);
 		return -1;
 	}
-	
+
 	err = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[1]));
 	if (err != 0) {
 		throwError(2, SERVER_ERROR_H, err);

@@ -27,7 +27,7 @@ int isRegularFile(const char* path) {
 
 int existsDir(char* path) {
 	if (isDirectory(path) == 0) {
-		return 1;
+		return -1;
 	}
 	return 0;
 }
@@ -35,7 +35,7 @@ int existsDir(char* path) {
 
 int existsFile(char* path) {
 	if (isRegularFile(path) == 0) {
-		return 1;
+		return -1;
 	}
 	return 0;
 }

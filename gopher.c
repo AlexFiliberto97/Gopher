@@ -183,12 +183,13 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 	struct Dict assoc_dict;
 	char** assoc = getDispNamesAssoc(path, &assoc_count);
 
+
 	if (assoc != NULL) {
 		// Separo i valori di assoc in coppie chiave-valore usando un Dict
 		assoc_dict = buildDict(assoc, assoc_count);
 		if (assoc_dict.err == 0) use_assoc = 1;
+		freeList(assoc, assoc_count);
 	}
-	freeList(assoc, assoc_count);
 
 	//////////////////////////////////////////////////////////////////
 	// Inizializzo la lista di stringhe di output
@@ -203,7 +204,6 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 		return NULL;
 	}
 	//////////////////////////////////////////////////////////////////
-
 
 	struct GopherElementData ged;
 
@@ -280,12 +280,8 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 }
 
 
-/* Function: handleRequest
-* -------------------------------
-*  
-*/
 // char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode, void*** map) {
-char* handleRequest(char* request, size_t* response_sz, int* mapping, struct HandlerData* hd, int process_mode) {
+char* handleRequest(char* request, long long* response_sz, int* mapping, struct HandlerData* hd, int process_mode) {
 
 	char* response;
 
@@ -397,15 +393,15 @@ int handler(void* input, int process_mode) {
 		free(msg);
 		return ALLOC_ERROR;
 	}
-	free(msg);
 
-    size_t response_sz;
+    long long response_sz;
     int file_request = 0;
 	// void** maps;
 
     char* response = handleRequest(request, &response_sz, &file_request, hd, process_mode);
     
 	if (response == NULL) {
+		free(msg);
 		free(request);
 		return SERVER_ERROR_H;
 	}
@@ -433,6 +429,7 @@ int handler(void* input, int process_mode) {
 		int th_id = startThread(sendResponse, (void*) &sfd, 0);
 
 		if (th_id < 0 || joinCollect(th_id) != 0) {
+			free(msg);
 			free(request);
 			freeHandlerDataStruct(hd, process_mode);
 			throwError(1, th_id);
@@ -442,7 +439,7 @@ int handler(void* input, int process_mode) {
 		if (sfd.err == 0) {
 
 			char file_sz[20];
-			sprintf(file_sz, "%lu", (unsigned long int) response_sz);
+			sprintf(file_sz, "%lld", response_sz);
 
 			char* pipe_msg = (char*) malloc(strlen(hd->cli_data) + strlen(hd->abs_root_path) + strlen(msg) + strlen(file_sz) + 9);
 
@@ -499,6 +496,7 @@ int handler(void* input, int process_mode) {
 		close(hd->sock);
 	#endif
 
+	free(msg);
 	free(request);
 
 	if (file_request == 0) {

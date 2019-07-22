@@ -110,6 +110,8 @@ char* recvAll(int sock, size_t* len) {
 
 
 int sendAll(int sock, char* data, long long file_sz) {
+	
+
 	void *sendbuf = (void *) malloc(SENDBUF_SIZE);
 	if (sendbuf == NULL) {
 		throwError(1, ALLOC_ERROR);

@@ -1,6 +1,0 @@
-127.0.0.1:55476 /home/giorgio/Programming/SoIIProject/root/docs/documento1.txt 5 byte
-127.0.0.1:57524 /home/giorgio/Programming/SoIIProject/root/docs/documento2.txt 5 byte
-127.0.0.1:58036 /home/giorgio/Programming/SoIIProject/root/docs/documento2.txt 5 byte
-127.0.0.1:62644 /home/giorgio/Programming/SoIIProject/root/imgs/alex.jpg 56523 byte
-127.0.0.1:37557 /home/giorgio/Programming/SoIIProject/root/ 56523 byte
-127.0.0.1:32438 /home/giorgio/Programming/SoIIProject/root/Ð 56523 byte
