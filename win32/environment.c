@@ -11,7 +11,6 @@
 #include "../server.h"
 #include "../error.h"
 
-//Global variables
 int SERVER_ALIVE = 0;
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
@@ -31,7 +30,6 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 		   		printf("Stopping server...\n");
 		        SERVER_ALIVE = 0;
 		        serverStop();
-		        system("color 0f");
 		        return TRUE;
 		    } else {
 		    	return TRUE;
@@ -68,7 +66,6 @@ void consoleDecoration(){
     printf("            |_|                    \n");
 }
 
-
 void init_env() {
 
 	SERVER_ALIVE = 1;
@@ -76,7 +73,6 @@ void init_env() {
 	initThread();
 	initProcess();
 }
-
 
 int start_env() {
 
@@ -125,6 +121,7 @@ int start_env() {
 
 void clean_env() {
 
+	system("color 0f");
 	freeServerOptions();
 	destroyProcess();
 	destroyThreads();

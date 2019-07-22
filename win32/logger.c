@@ -16,32 +16,27 @@ int setKeyboardEvent() {
 	return 0;
 }
 
-void init_env() {
-	//initPipes();	
-	initEvents();
-}
-
 int main(int argc, char** argv) {
 
-	init_env();
+	initEvents();
 
 	int err;
 	err = setKeyboardEvent();
 	if (err != 0) {
-		throwError(2, SERVER_ERROR_H, err);
+		throwError(3, SERVER_ERROR_H, err, LOGGER_ERROR);
 		return -1;
 	}
 	
 	addPipe((HANDLE) atoi(argv[0]), NULL);
 	err = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[1]));
 	if (err != 0) {
-		throwError(2, SERVER_ERROR_H, err);
+		throwError(3, SERVER_ERROR_H, err, LOGGER_ERROR);
 		return -1;
 	}
 	
 	err = addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[2]));
 	if (err != 0) {
-		throwError(2, SERVER_ERROR_H, err);
+		throwError(3, SERVER_ERROR_H, err, LOGGER_ERROR);
 		return -1;
 	}
 	
@@ -56,7 +51,7 @@ int main(int argc, char** argv) {
 
 		err = appendToFile("log.txt", text);
 		if (err != 0) {
-			throwError(1, err);
+			throwError(2, err, LOGGER_ERROR);
 		}
 
 		setEvent("WRITE_LOG_EVENT");

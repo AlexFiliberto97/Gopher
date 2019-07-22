@@ -28,13 +28,13 @@
 	#define WRITE_FILE_ERROR -31
 	#define THREAD_UNAVAILABLE -32
 	#define THREAD_ERROR -33
-	#define PIPE_UNAVAILABLE -34
-	#define PIPE_INDEX -35
+	#define LISTENER_ERROR -34
+	#define LOGGER_ERROR -35
 	#define PIPE_ERROR -36
-	#define PIPE_NOT_FOUND -37
+	//#define PIPE_NOT_FOUND -37
 	#define WRITE_PIPE -38
 	#define READ_PIPE -39
-	#define CREATE_MAPPING -40 // mapping e shared memory
+	#define CREATE_MAPPING -40
 	#define OPEN_MAPPING -41
 	#define READ_MAPPING -42
 	#define DELETE_MAPPING -43
@@ -61,6 +61,7 @@
 	#define SIGEVENT_ERROR -64
 	#define DAEMON_ERROR -65
 	
+	int getSystemError();
 	char* errorCode(int);
 	void throwError(int, ...);
 

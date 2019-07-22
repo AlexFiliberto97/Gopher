@@ -25,7 +25,6 @@
 	#include <errno.h>
 #endif
 
-//Prototipes
 void closeSocket(int );
 int getOpts(int, char**);
 int getConfig();
@@ -36,14 +35,8 @@ int serverReload();
 void serverCleanup(int);
 void serverStop();
 
-
-/*
-	NB: la connessione resta aperta se fallisce malloc realloc o continue in generale
-	NB: la root_path va controllata prima di tutto (creare una gerarchia tra root)
-*/
-
-//Global structs
 struct Opts {
+	
 	int sock;
 	int port;
 	int process_mode;
@@ -52,13 +45,11 @@ struct Opts {
 	char* abs_root_path;
 };
 
-
-//Global variables
 static struct Opts serverOptions;
 static int SERV_RUNNING = 1;
 
-
 void freeServerOptions() {
+
 	serverOptions.sock = -1;
 	serverOptions.port = -1;
 	serverOptions.process_mode = 0;
@@ -67,8 +58,6 @@ void freeServerOptions() {
 	if (serverOptions.abs_root_path != NULL) free(serverOptions.abs_root_path);
 }
 
-
-//Get server config from command line
 int getOpts(int argc, char** args) {
 
 	int port = -1, process_mode = -1;
@@ -87,8 +76,6 @@ int getOpts(int argc, char** args) {
 
 }
 
-
-//Get server config from config file
 int getConfig() {
 
 	int config_count;
@@ -100,23 +87,14 @@ int getConfig() {
 	if (config_dict.err != 0) return ALLOC_ERROR;
 	freeList(config_assoc_list, config_count);
 
-	// ADDRESS
 	char* address_v = getAssocValue("address", config_dict);
-
 	if (address_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} else if (ipFormatCheck(address_v) != 0) {
 		freeDict(config_dict);
-		return BAD_ADDRESS; // BAD_ADDRESS
+		return BAD_ADDRESS;
 	}
-
-	// serverOptions.address = (char*) malloc(strlen(address_v) + 1);
-	// if (serverOptions.address == NULL) { 
-	// 	freeDict(config_dict);
-	// 	return ALLOC_ERROR;
-	// }
-	// strcpy(serverOptions.address, address_v);
 
 	serverOptions.address = cpyalloc(address_v);
 	if (serverOptions.address == NULL) { 
@@ -124,9 +102,7 @@ int getConfig() {
 		return ALLOC_ERROR;
 	}
 
-	// PORT
 	char* port_v = getAssocValue("port", config_dict);
-
 	if (port_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
@@ -137,50 +113,38 @@ int getConfig() {
 		freeDict(config_dict);
 		return BAD_PORT;
 	}
+	
 	serverOptions.port = port;
-
-	// PROCESS MODE
 	char* process_mode_v = getAssocValue("process", config_dict);
-
 	if (process_mode_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} 
 
 	int process_mode = atoi(process_mode_v);
-
 	if (process_mode != 0 && process_mode != 1) {
 		freeDict(config_dict);
 		return BAD_PMODE;
 	}
+
 	serverOptions.process_mode = process_mode;
-
-	// ROOT PATH
 	char* root_path_v = getAssocValue("root", config_dict);
-
 	if (root_path_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} 
 
 	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) != 0)) {
-		// printlog("ERROR: il percorso root assoluto deve terminare con '/', non deve contenere '\\' e deve essere valido.\n", 0, NULL);
 		freeDict(config_dict);
 		return BAD_ROOT;
 	}
 
 	serverOptions.abs_root_path = cpyalloc(root_path_v);
-
-	// serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
 	if (serverOptions.abs_root_path == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
 
-	// strcpy(serverOptions.abs_root_path, root_path_v);
-
-
-	
 	if (strcmp(root_path_v, "/") == 0 || strcmp(&root_path_v[1], ":/") == 0) {
 		serverOptions.root_path = (char*) malloc(strlen(root_path_v) + 1);
 		strcpy(serverOptions.root_path, root_path_v);
@@ -190,40 +154,35 @@ int getConfig() {
 		if (last_occ == -1) {
 			freeDict(config_dict);
 			return -1;
-		} //CHECK LATER
+		}
 
 		char* rel_root_path = slice(root_path_v, last_occ + 1, strlen(root_path_v));
 		if (rel_root_path == NULL) {
 			freeDict(config_dict);
 			return -1;
-		} //CHECK LATER
+		}
 
 		serverOptions.root_path = cpyalloc(rel_root_path);
-		// serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
 		if (serverOptions.root_path == NULL) {
 			free(rel_root_path);
 			freeDict(config_dict);
 			return ALLOC_ERROR;
 		}
-		// strcpy(serverOptions.root_path, rel_root_path);
 		free(rel_root_path);
 	}
-
 	freeDict(config_dict);
-
 	return 0;
 }
-
 
 int serverInit(int argc, char** args) {
 
 	freeServerOptions();
-
 	int confErr = getConfig();
 	if (confErr != 0) {
 		throwError(1, confErr);
 		return -1;
 	}
+
 	int optsErr = getOpts(argc, args);
 	if (confErr != 0 && optsErr != 0) {
 		return confErr;
@@ -241,17 +200,12 @@ int serverInit(int argc, char** args) {
 			return WSA_ERROR;
 		}
 	#endif
-
 	return 0;
-
 }
 
-
-//Start the server
 int serverStart() {
 
 	int err;
-
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock == -1) { 
 		serverCleanup(sock);
@@ -284,11 +238,8 @@ int serverStart() {
 	}
 	serverOptions.sock = sock;
 	return 0;
-
 }
 
-
-//Handle the incoming requests
 int serverService() {
 
 	int err = listen(serverOptions.sock, 10);
@@ -307,32 +258,25 @@ int serverService() {
 		FD_SET(serverOptions.sock, &readSet);
 		struct timeval timeout = {1, 0};
 
-
 		err = select(serverOptions.sock + 1, &readSet, NULL, NULL, &timeout);
-
 		if (err == -1) {
-			#ifdef __linux__
-				if (errno == 4) continue;
-			#endif
-			printlog("ERR %d", errno, NULL);
 			serverCleanup(serverOptions.sock);
-			throwError(3, SERVER_ERROR_H, SELECT_ERROR, END_ERROR);
+			throwError(2, SERVER_ERROR_H, SELECT_ERROR);
 			continue;
 		}
 		
 		if (FD_ISSET(serverOptions.sock, &readSet) == 0) continue;
-		
 		struct sockaddr_in cli_addr  = {0};
 		int cli_addr_len = sizeof(cli_addr);		
 		int acceptSocket = accept(serverOptions.sock, (struct sockaddr*) &cli_addr, (socklen_t*) &cli_addr_len);
 		if (acceptSocket == -1) {
-			throwError(3, SERVER_ERROR_H, ACCEPT_ERROR, END_ERROR);
+			throwError(2, SERVER_ERROR_H, ACCEPT_ERROR);
 			continue;
 		}
 		
 		char* cli_data = getClientAddress(cli_addr);
 		if (cli_data == NULL) {
-			throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
+			throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 			closeSocket(acceptSocket);
 			continue; 
 		}
@@ -340,7 +284,7 @@ int serverService() {
 		if (serverOptions.process_mode == 0) {
 			struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
 			if (hd == NULL) {
-				throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
+				throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 				closeSocket(acceptSocket);
 				continue; 
 			}
@@ -349,19 +293,17 @@ int serverService() {
 			hd->address = cpyalloc(serverOptions.address);
 			hd->root_path = cpyalloc(serverOptions.root_path);
 			hd->abs_root_path = cpyalloc(serverOptions.abs_root_path);
-
 			if (hd->cli_data == NULL || hd->address == NULL || hd->root_path == NULL || hd->abs_root_path == NULL ) {
-				throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
+				throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 				closeSocket(acceptSocket);
 				continue; 
 			}
 			
 			hd->sock = acceptSocket;
 			hd->port = serverOptions.port;
-		
 			int th = startThread((void*) handler, (void*) hd, 1);
 			if (th < 0) {
-				throwError(3, SERVER_ERROR_H, th, END_ERROR);
+				throwError(2, SERVER_ERROR_H, th);
 				closeSocket(acceptSocket);	 
 				continue;
 			}
@@ -370,7 +312,7 @@ int serverService() {
 			#ifndef __linux__
 				char** cmd = (char**) malloc(sizeof(char*) * 9);
 				if (cmd == NULL) {
-					throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
+					throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 					closeSocket(acceptSocket);
 					continue; 
 				}		
@@ -384,7 +326,7 @@ int serverService() {
 	   			cmd[7] = (char*) malloc(strlen(serverOptions.root_path) + 1);
 	   			cmd[8] = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
 	   			if (checkMalloc(cmd, 9) != 0) {
-					throwError(3, SERVER_ERROR_H, ALLOC_ERROR, END_ERROR);
+					throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
 					closeSocket(acceptSocket);
 					continue; 
 				}	
@@ -402,7 +344,7 @@ int serverService() {
 			#else
 				struct HandlerData* hd = (struct HandlerData*) create_shared_memory(sizeof(struct HandlerData));
 				if (hd == MAP_FAILED) {
-					throwError(3, SERVER_ERROR_H, CREATE_MAPPING, END_ERROR);
+					throwError(2, SERVER_ERROR_H, CREATE_MAPPING);
 					closeSocket(acceptSocket);
 					continue; 
 				}
@@ -411,10 +353,11 @@ int serverService() {
 				hd->root_path = (char*) create_shared_memory(strlen(serverOptions.root_path) + 1);
 				hd->abs_root_path = (char*) create_shared_memory(strlen(serverOptions.abs_root_path) + 1);
 				if (hd->cli_data == MAP_FAILED || hd->address == MAP_FAILED || hd->root_path == MAP_FAILED || hd->abs_root_path == MAP_FAILED) {
-					throwError(3, SERVER_ERROR_H, CREATE_MAPPING, END_ERROR);
+					throwError(2, SERVER_ERROR_H, CREATE_MAPPING);
 					closeSocket(acceptSocket);
 					continue; 
 				}
+
 				strcpy(hd->cli_data, cli_data);
 				strcpy(hd->address, serverOptions.address);
 				strcpy(hd->root_path, serverOptions.root_path);
@@ -435,11 +378,10 @@ int serverService() {
 	SERV_RUNNING = 1;
 	serverCleanup(serverOptions.sock);
 	return 0;
-
 }
 
-
 void serverCleanup(int sock) {
+	
 	#ifndef __linux__
 		WSACleanup();
 	#endif
@@ -447,6 +389,7 @@ void serverCleanup(int sock) {
 }
 
 void closeSocket(int sock) {
+	
 	#ifndef __linux__
 		closesocket(sock);
 	#else
@@ -454,7 +397,7 @@ void closeSocket(int sock) {
 	#endif
 }
 
-//Stop and destroy the server
 void serverStop() {
+	
 	SERV_RUNNING = 0;
 }

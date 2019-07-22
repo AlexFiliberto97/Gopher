@@ -5,6 +5,19 @@
 
 #define MAX_ERROR_LENGTH 90
 
+#ifndef __linux__
+	#include <windows.h>
+#endif
+
+int getSystemError() {
+	
+	#ifndef __linux__
+		return GetLastError();
+	#else
+		return errno;
+	#endif
+}
+
 char* errorCode(int err) {
 
 	char* msg = (char*) malloc (MAX_ERROR_LENGTH);
@@ -60,19 +73,17 @@ char* errorCode(int err) {
 		case -33:
 			return strcpy(msg, "-> Cannot start the thread.\n");
 		case -34:
-			return strcpy(msg, "");
+			return strcpy(msg, "-> Error in listener process.\n");
 		case -35:
-			return strcpy(msg, "");
+			return strcpy(msg, "-> Error in logger process.\n");
 		case -36:
-			return strcpy(msg, "");
-		case -37:
-			return strcpy(msg, "");
+			return strcpy(msg, "Error creating the pipe.\n");
 		case -38:
 			return strcpy(msg, "-> Error writing on pipe.\n");
 		case -39:
 			return strcpy(msg, "-> Error reading from pipe.\n");
 		case -40:
-			return strcpy(msg, "-> Error creating file mapping.\n");
+			return strcpy(msg, "-> Error creating file mapping or shared memory.\n");
 		case -41:
 			return strcpy(msg, "-> Error opening file mapping.\n");
 		case -42:
@@ -131,28 +142,34 @@ void throwError(int num, ...) {
 
 	va_list valist;
    	va_start(valist, num);
-    
+
    	FILE* errLog = fopen("error.log", "a+b");
    	if (errLog ==  NULL) {
    		return;
    	}
-
 
    	fwrite("Error >>>\n", 1, strlen("Error >>>\n"), errLog);
    
    	for (int i = 0; i < num; i++) {
 
         int errCode = va_arg(valist, int);
-   		if (errCode == -1) {
-   			fwrite("<<<\n", 1, strlen("<<<\n"), errLog);
-   		} else {
-   			char* msg = errorCode(errCode);
-   			if (msg != NULL) {
-   				fwrite(msg, 1, strlen(msg), errLog);
-   				free(msg);
-   			}
+   		
+   		char* msg = errorCode(errCode);
+   		if (msg != NULL) {
+   			fwrite(msg, 1, strlen(msg), errLog);
+   			free(msg);
    		}
+   	}
+
+   	int sysErr = getSystemError();
+   	if(sysErr != 0 && sysErr != 183) {
+
+   		char err[11];
+   		sprintf(err, "%d", sysErr);
+   		fwrite(err, 1, strlen(err), errLog);
 
    	}
+
+   	fwrite(" >>>\n\n", 1, strlen(">>>\n\n"), errLog);
    	fclose(errLog);
 }

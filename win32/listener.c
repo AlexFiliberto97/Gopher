@@ -16,21 +16,37 @@ int serverInit() {
 	return 0;
 }
 
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
+    return TRUE;
+}
+
+int setKeyboardEvent() {
+	BOOL succ = SetConsoleCtrlHandler(CtrlHandler, TRUE);
+	if (!succ) return -1;
+	return 0;
+}
+
 int main(int argc, char** argv) {
 
 	serverInit();
 	int error;
-	
+
+	error = setKeyboardEvent();
+	if (error != 0) {
+		throwError(3, SERVER_ERROR_H, error, LISTENER_ERROR);
+		return -1;
+	}
+
 	addPipe(NULL, (HANDLE) atoi(argv[1]));
 	error = addEvent("WRITE_LOG_EVENT", (HANDLE) atoi(argv[2]));
 	if (error < 0) {
-		throwError(2, SERVER_ERROR_H, error);
+		throwError(3, SERVER_ERROR_H, error, LISTENER_ERROR);
 		return -1;
 	}
 	
 	error = addEvent("READ_LOG_EVENT", (HANDLE) atoi(argv[3]));
 	if (error < 0) {
-		throwError(2, SERVER_ERROR_H, error);
+		throwError(3, SERVER_ERROR_H, error, LISTENER_ERROR);
 		return -1;
 	}
 
@@ -38,7 +54,6 @@ int main(int argc, char** argv) {
 
 	hd->sock = atoi(argv[0]);
 	hd->port = atoi(argv[6]);
-
 	hd->cli_data = (char*) malloc(strlen(argv[4]) + 1);
 	hd->address = (char*) malloc(strlen(argv[5]) + 1);
 	hd->root_path = (char*) malloc(strlen(argv[7]) + 1);
@@ -51,10 +66,9 @@ int main(int argc, char** argv) {
 
 	error = handler((void*) hd, 1);
 	if (error < 0) {
-		throwError(2, SERVER_ERROR_H, error);
+		throwError(3, SERVER_ERROR_H, error, LISTENER_ERROR);
 		return -1;
 	}
-
 
 	free(hd->cli_data);
 	free(hd->address);
@@ -63,5 +77,4 @@ int main(int argc, char** argv) {
 	free(hd);
 
 	return 0;
-
 }
