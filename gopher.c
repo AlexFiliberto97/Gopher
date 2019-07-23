@@ -89,14 +89,26 @@ char getGopherType(char* path, struct Dict ext_dict) {
 char** getDispNamesAssoc(char* path, int *count) {
 	
 	char* fname = "_dispnames";
-	char dispNamesPath[strlen(path)+strlen(fname)+1];
+	char* dispNamesPath = (char*) malloc(strlen(path) +strlen(fname)+1);
+	if (dispNamesPath == NULL) {
+		throwError(1, ALLOC_ERROR);
+		return NULL;
+	}
+	
 	sprintf(dispNamesPath, "%s%s", path, fname);
-	if (existsFile(dispNamesPath) != 0) return NULL;
+	if (existsFile(dispNamesPath) != 0) {
+		free(dispNamesPath);
+		return NULL;
+	}
 
 	int n;
 	char** lista = readlines(dispNamesPath, &n);
-	if (lista == NULL) return NULL;
+	if (lista == NULL) {
+		free(dispNamesPath);
+		return NULL;
+	}
 
+	free(dispNamesPath);
 	*count = n;
 	return lista;
 }
