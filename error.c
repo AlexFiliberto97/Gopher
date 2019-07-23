@@ -7,6 +7,8 @@
 
 #ifndef __linux__
 	#include <windows.h>
+#else
+	#include <errno.h>
 #endif
 
 int getSystemError() {
@@ -169,7 +171,6 @@ void throwError(int num, ...) {
    		fwrite(err, 1, strlen(err), errLog);
 
    	}
-
    	fwrite(" >>>\n\n", 1, strlen(">>>\n\n"), errLog);
    	fclose(errLog);
 }

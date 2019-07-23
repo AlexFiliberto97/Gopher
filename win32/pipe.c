@@ -54,6 +54,7 @@ int writePipe(char* msg) {
 			size[i] = sz[i-11+strlen(sz)];
 		}
 	}
+	size[11] = '\0';
 
 	char* comp_msg = (char*) malloc(strlen(msg) + strlen(size) + 1);
 	if (comp_msg == NULL) return ALLOC_ERROR;
