@@ -45,6 +45,11 @@ int main(int argc, char** argv) {
 		waitEvent("READ_LOG_EVENT"); 
 		char* text = readPipe("LOGGER_PIPE");
 
+		if (strcmp(text, "TERMINATE_LOGGER") == 0) {
+				free(text);
+				break;
+			}
+
 		if (text == NULL) {
 			appendToFile("log.txt", "Errore nella lettura della pipe\n");			
 		}

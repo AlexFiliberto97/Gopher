@@ -10,6 +10,6 @@
 	int startProcess(char*, int, char**);
 	BOOL processIsRunning(HANDLE);
 	void* processCollector(void*);
-	void destrotProcess();
+	void destroyProcess();
 
 #endif

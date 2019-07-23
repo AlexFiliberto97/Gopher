@@ -5,8 +5,8 @@
 #include <winbase.h>
 #include "../error.h"
 
-
 void freeArray(char** list, int c) {
+	
 	for (int i = 0; i < c; i++) {
 		if(list[i] != NULL) {
 			free(list[i]);
@@ -15,7 +15,6 @@ void freeArray(char** list, int c) {
 	free(list);
 }
 
-
 int countDirElements(char *path) {
 
 	WIN32_FIND_DATA data;
@@ -23,7 +22,7 @@ int countDirElements(char *path) {
 	if (nPath == NULL) return ALLOC_ERROR;
 
 	sprintf(nPath, "%s*.*", path);
-	HANDLE hFind = FindFirstFile(nPath, &data); //Questo forse va controllato
+	HANDLE hFind = FindFirstFile(nPath, &data);
 	int c = 0;
 	do {
 
@@ -44,7 +43,6 @@ int countDirElements(char *path) {
 	free(nPath);
 	return c;
 }
-
 
 char* readFile(char *fileName, int* ignore) {
 
@@ -102,8 +100,7 @@ char* readFile(char *fileName, int* ignore) {
 
 	free(buf);
 	return data;
-} 
-
+}
 
 char** listDir(char *path, int *count) {
 
@@ -172,17 +169,14 @@ char** listDir(char *path, int *count) {
 	return list;
 }
 
-
 int existsDir(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
 	if ((attributes != INVALID_FILE_ATTRIBUTES) && (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
 		return 0;
 	}
-	
 	return -1;
 }
-
 
 int existsFile(char* path) {
 
@@ -192,7 +186,6 @@ int existsFile(char* path) {
 	}
 	return -1;
 }
-
 
 int appendToFile(char* path, char* text) {
 

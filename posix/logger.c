@@ -43,7 +43,7 @@ void* logger(void* input) {
         pthread_mutex_unlock(shared_lock->mutex);
 
 	}
-
+	printf("cazzo\n");
 	return NULL;
 
 }

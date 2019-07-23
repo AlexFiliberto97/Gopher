@@ -3,7 +3,6 @@
 	#define EVENT_H_
 
 	#include <windows.h>
-	#include <stdio.h>
 	#include "event.c"
 	
 	void initEvents();

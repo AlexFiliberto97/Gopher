@@ -13,6 +13,22 @@
 
 int SERVER_ALIVE = 0;
 
+int killLogger() {
+
+	int err;
+    char* msg = "TERMINATE_LOGGER";
+    char* pipe_msg = (char*) malloc(strlen(msg) + 1);
+     if (pipe_msg == NULL) return ALLOC_ERROR;
+
+    strcpy(pipe_msg, msg);
+	waitEvent("WRITE_LOG_EVENT");
+	err = writePipe(pipe_msg);
+	if (err != 0) return err;
+
+	free(pipe_msg);
+	setEvent("READ_LOG_EVENT");
+}
+
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 
 	switch (fdwCtrlType) {
@@ -38,7 +54,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 	}	
 }
 
-void consoleDecoration(){
+void consoleDecoration() {
 
 	int columns;
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -77,7 +93,6 @@ void init_env() {
 int start_env() {
 
 	consoleDecoration();
-
 	BOOL succ = SetConsoleCtrlHandler(CtrlHandler, TRUE);
 	if (!succ) return CONSOLE_HANDLER;
 	
@@ -122,6 +137,7 @@ int start_env() {
 void clean_env() {
 
 	system("color 0f");
+	killLogger();
 	freeServerOptions();
 	destroyProcess();
 	destroyThreads();

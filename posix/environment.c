@@ -9,7 +9,6 @@
 #include "process.h"
 #include "logger.h"
 
-
 int SERVER_ALIVE = 0;
 int LOGGER_PID;
 static int daemonize = 1;
@@ -115,6 +114,7 @@ int killLogger() {
 
     int status;
     waitpid(LOGGER_PID, &status, 0);
+    free(pipe_msg);
 
     return 0;
 

@@ -10,7 +10,7 @@ struct Event {
 	HANDLE hEvent;
 };
 
-static struct Event Events[MAX_EVENTS];
+struct Event Events[MAX_EVENTS];
 
 void initEvents() {
 	

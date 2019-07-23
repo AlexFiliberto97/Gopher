@@ -52,13 +52,11 @@ int startProcess(char* name, int argc, char** args) {
 	return 0;
 }
 
-//Return TRUE if the process hProcess is running
 BOOL processIsRunning(HANDLE hProcess) {
 
     return WaitForSingleObject(hProcess, 0) == WAIT_TIMEOUT;
 }
 
-//Collect the ended processes
 void* processCollector(void *input){
 
 	while (TRUE) {
@@ -72,12 +70,12 @@ void* processCollector(void *input){
 	}
 }
 
-//Destroy the process environment
 void destroyProcess() {
 
 	for (int i = 0; i < MAX_PROCESS; i++) {
 		if (Processes[i].hProcess != NULL) {
-			TerminateProcess(Processes[i].hProcess, 0);
+			WaitForSingleObject(Processes[i].hProcess, INFINITE);
+			//TerminateProcess(Processes[i].hProcess, 0);
 			CloseHandle(Processes[i].hProcess);
 		}
 	}

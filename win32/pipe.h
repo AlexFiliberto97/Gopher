@@ -2,12 +2,8 @@
 	
 	#define PIPE_H_
 
-	#include <stdio.h>
 	#include "pipe.c"
-	
-	//void initPipes();
-	//int newpipeIndex();
-	//int pipeIndex();
+
 	int createLoggerPipe();
 	HANDLE getReader();
 	HANDLE getWriter();
