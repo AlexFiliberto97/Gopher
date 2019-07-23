@@ -9,17 +9,16 @@
 #include <pthread.h>
 #include "../error.h"
 
-
 struct Pipe {
+	
 	int handles[2];
 	int err;
 };
 
-
 struct Pipe* loggerPipe;
 
-
 struct Pipe* createLoggerPipe() {
+	
 	loggerPipe = (struct Pipe*) create_shared_memory(sizeof(struct Pipe));
 	if (loggerPipe == MAP_FAILED) {
 		throwError(1, CREATE_MAPPING);
@@ -27,21 +26,18 @@ struct Pipe* createLoggerPipe() {
 		return loggerPipe;
 	}
 	if (pipe(loggerPipe->handles) != 0) {
-		loggerPipe->err = 1;
+		loggerPipe->err = PIPE_ERROR;
 	} else {
 		loggerPipe->err = 0;
 	}
 	return loggerPipe;
 }
 
-
 int writePipe(struct Pipe* pipe, char* msg) {
 
 	char sz[11];
 	sprintf(sz, "%d", (int) strlen(msg) + 1);
-
 	char size[12];
-
 	for (int i = 0; i < 11; i++) {
 		if (i < 11 - strlen(sz)) {
 			size[i] = '0';
@@ -52,59 +48,42 @@ int writePipe(struct Pipe* pipe, char* msg) {
 	size[11] = '\0';
 
 	char* comp_msg = (char*) malloc(strlen(msg) + strlen(size) + 1);
-
-	if (comp_msg == NULL) {
-		return ALLOC_ERROR;
-	}
+	if (comp_msg == NULL) return ALLOC_ERROR;
 
 	sprintf(comp_msg, "%s%s", size, msg);
-
 	int written = write(pipe->handles[1], comp_msg, strlen(comp_msg) + 1);
-
-	if (written < strlen(comp_msg) + 1) {
-		return WRITE_PIPE;
-	}
+	if (written < strlen(comp_msg) + 1) return WRITE_PIPE;
 
 	free(comp_msg);
-
 	return 0;
-
 }
 
-
-char* readPipe(struct Pipe* pipe){
+char* readPipe(struct Pipe* pipe) {
 
 	int r; 
-
 	char size[12];
 	r = read(pipe->handles[0], size, 11);
 	if (r < 11) {
 		throwError(1, READ_PIPE);
 		return NULL;
 	}
-	size[11] = '\0';
 	
+	size[11] = '\0';
 	int sz = atoi(size);
-
 	char* msg = (char*) malloc(sz);
-
 	if (msg == NULL) {
 		throwError(1, ALLOC_ERROR);
 		return NULL;
 	}
 
 	r = read(pipe->handles[0], msg, sz);
-
 	if (r < sz) {
 		free(msg);
 		throwError(1, READ_PIPE);
 		return NULL;
 	}
-
 	return msg;
-
 }
-
 
 int destroyLoggerPipe() {
 
@@ -120,5 +99,4 @@ int destroyLoggerPipe() {
 	if (err = DELETE_MAPPING) return err;
 
 	return 0;
-
 }

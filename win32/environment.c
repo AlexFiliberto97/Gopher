@@ -11,6 +11,8 @@
 #include "../server.h"
 #include "../error.h"
 
+#define LOGGER_EXE "win32/logger.exe"
+
 int SERVER_ALIVE = 0;
 
 int killLogger() {
@@ -18,7 +20,7 @@ int killLogger() {
 	int err;
     char* msg = "TERMINATE_LOGGER";
     char* pipe_msg = (char*) malloc(strlen(msg) + 1);
-     if (pipe_msg == NULL) return ALLOC_ERROR;
+    if (pipe_msg == NULL) return ALLOC_ERROR;
 
     strcpy(pipe_msg, msg);
 	waitEvent("WRITE_LOG_EVENT");
@@ -27,6 +29,7 @@ int killLogger() {
 
 	free(pipe_msg);
 	setEvent("READ_LOG_EVENT");
+	return 0;
 }
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
@@ -111,14 +114,17 @@ int start_env() {
 
    	for (int i = 0; i < argc; i++) {
    		cmd[i] = (char*) malloc(11);
-   		if (cmd[i] == NULL) return ALLOC_ERROR;
+   		if (cmd[i] == NULL) {
+   			freeArray(cmd, i);
+   			return ALLOC_ERROR;
+   		}
    	}
 
    	sprintf(cmd[0], "%d", (int)getReader("LOGGER_PIPE"));
    	sprintf(cmd[1], "%d", (int)eventHandler("WRITE_LOG_EVENT"));
    	sprintf(cmd[2], "%d", (int)eventHandler("READ_LOG_EVENT"));
 	
-	success = startProcess("win32/logger.exe", 3, cmd);
+	success = startProcess(LOGGER_EXE, 3, cmd);
 	if (success != 0) {
 		freeList(cmd, argc);
 		return success;
@@ -134,13 +140,14 @@ int start_env() {
 	return 0;
 }
 
-void clean_env() {
+int clean_env() {
 
-	system("color 0f");
-	killLogger();
+	int err = killLogger();
 	freeServerOptions();
 	destroyProcess();
 	destroyThreads();
 	destroyLoggerPipe();
+	serverDestroy();
 	destroyEvents();
+	return err;
 }

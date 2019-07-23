@@ -3,7 +3,6 @@
 #include <windows.h>
 #include "../error.h"
 
-//Create a new file mapping
 HANDLE createMapping(char* path, char* mapName, long long* size, int process_mode) {
 
 	HANDLE hFile, hMap;

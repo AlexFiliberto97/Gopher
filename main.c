@@ -49,6 +49,8 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	clean_env();
+	err = clean_env();
+	if (err < 0) throwError(1, err);
+	
 	return 0;
 }

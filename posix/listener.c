@@ -5,17 +5,11 @@
 #include "../utils.h"
 #include "../network.h"
 
-
 void* listener(void* input){
 
-	// int* err = (int*) create_shared_memory(sizeof(int));
-
 	struct HandlerData* hd = (struct HandlerData*) input;
-
 	int err = handler((void*) hd, 1);
-
 	if (err != 0) throwError(1, err);
 
 	return NULL;
-
 }

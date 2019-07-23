@@ -6,8 +6,11 @@
 	#include <stdlib.h>
 	#include "thread.c"
 	
-	void* threadCollector(void*);
+	void initThread();
 	int joinCollect(int);
+	void* threadCollector(void*);
 	int startThread(void* (*f)(void*), void*, int);
+	void stopThreadCollector();
+	void destroyThreads();
 	
 #endif

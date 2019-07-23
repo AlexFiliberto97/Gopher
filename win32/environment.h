@@ -8,6 +8,6 @@
 	void consoleDecoration();
 	void init_env();
 	int start_env();
-	void clean_env();
+	int clean_env();
 
 #endif

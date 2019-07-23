@@ -2,6 +2,7 @@
 
     #include "mutex.c"
 
-    int initLocking();
+    int initMutex();
+    int destroySharedMutex();
 
 #endif

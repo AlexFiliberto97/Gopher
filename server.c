@@ -25,14 +25,13 @@
 	#include <errno.h>
 #endif
 
-void closeSocket(int );
 int getOpts(int, char**);
 int getConfig();
 int serverInit(int, char**);
 int serverStart();
 int serverService();
 int serverReload();
-void serverCleanup(int);
+void closeSocket(int);
 void serverStop();
 
 struct Opts {
@@ -194,7 +193,6 @@ int serverInit(int argc, char** args) {
 		WSADATA wsaData;
 		int err	= WSAStartup(514, &wsaData);
 		if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2 || err != 0) {
-			serverCleanup(-1);
 			throwError(1, SERVER_ERROR_S);
 			return WSA_ERROR;
 		}
@@ -206,8 +204,8 @@ int serverStart() {
 
 	int err;
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock == -1) { 
-		serverCleanup(sock);
+	if (sock == -1) {
+		closeSocket(sock);
 		throwError(1, SERVER_ERROR_S); 
 		return SOCK_ERROR;
 	}
@@ -220,7 +218,7 @@ int serverStart() {
 	#endif
 
 	if (err < 0) {
-		serverCleanup(sock);
+		closeSocket(sock);
 		throwError(1, SERVER_ERROR_S); 
 		return SOCK_ERROR; 
 	}
@@ -231,7 +229,7 @@ int serverStart() {
 	service.sin_port = htons(serverOptions.port);
 	err = bind(sock, (struct sockaddr*) &service, sizeof(service));
 	if (err == -1) {
-		serverCleanup(sock);
+		closeSocket(sock);
 		throwError(1, SERVER_ERROR_S); 
 		return BIND_ERROR;
 	}
@@ -243,7 +241,7 @@ int serverService() {
 
 	int err = listen(serverOptions.sock, 10);
 	if (err == -1) {
-		serverCleanup(serverOptions.sock);
+		closeSocket(serverOptions.sock);
 		throwError(1, SERVER_ERROR_S); 
 		return LISTEN_ERROR;
 	} 
@@ -259,7 +257,7 @@ int serverService() {
 
 		err = select(serverOptions.sock + 1, &readSet, NULL, NULL, &timeout);
 		if (err == -1) {
-			serverCleanup(serverOptions.sock);
+			closeSocket(serverOptions.sock);
 			throwError(2, SERVER_ERROR_H, SELECT_ERROR);
 			continue;
 		}
@@ -375,20 +373,12 @@ int serverService() {
 	}
 
 	SERV_RUNNING = 1;
-	serverCleanup(serverOptions.sock);
+	closeSocket(serverOptions.sock);
 	return 0;
 }
 
-void serverCleanup(int sock) {
-	
-	#ifndef __linux__
-		WSACleanup();
-	#endif
-	closeSocket(sock);
-}
-
 void closeSocket(int sock) {
-	
+
 	#ifndef __linux__
 		closesocket(sock);
 	#else
@@ -399,4 +389,9 @@ void closeSocket(int sock) {
 void serverStop() {
 	
 	SERV_RUNNING = 0;
+}
+
+void serverDestroy() {
+
+	WSACleanup();
 }

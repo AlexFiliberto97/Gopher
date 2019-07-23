@@ -44,7 +44,9 @@ int startProcess(char* name, int argc, char** args) {
     ZeroMemory(&proc_info, sizeof(proc_info));
     GetStartupInfo(&start_info);
     BOOL success = CreateProcessA(name, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &start_info, &proc_info);
-    if (!success) return PROCESS_ERROR;
+    if (!success) {
+    	return PROCESS_ERROR;
+    }
     
 	free(cmd);
 	Processes[index].hProcess = proc_info.hProcess;
@@ -75,7 +77,6 @@ void destroyProcess() {
 	for (int i = 0; i < MAX_PROCESS; i++) {
 		if (Processes[i].hProcess != NULL) {
 			WaitForSingleObject(Processes[i].hProcess, INFINITE);
-			//TerminateProcess(Processes[i].hProcess, 0);
 			CloseHandle(Processes[i].hProcess);
 		}
 	}

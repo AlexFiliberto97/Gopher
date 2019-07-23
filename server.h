@@ -4,12 +4,14 @@
 	
 	#include "server.c"
 
+	void freeServerOptions();
 	int getOpts(int, char**);
 	int getConfig();
 	int serverInit(int, char**);
-	int serverService();
 	int serverStart();
+	int serverService();
 	void serverCleanup(int);
-	int reloadServer();
+	void serverStop();
+	void serverDestroy();
 
 #endif

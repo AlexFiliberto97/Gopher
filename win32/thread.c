@@ -73,7 +73,7 @@ void* threadCollector(void *input) {
 void destroyThreads() {
 
 	for(int i = 0; i < MAX_THREADS; i++) {
-		TerminateThread(Threads[i].Th, 0);  ///Da rivedere
+		TerminateThread(Threads[i].Th, 0);
 		CloseHandle(Threads[i].Th);
 	}
 }

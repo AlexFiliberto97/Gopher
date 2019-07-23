@@ -1,4 +1,3 @@
-// #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 
@@ -7,7 +6,6 @@
 #include <signal.h>
 #include "pipe.h"
 #include "mutex.h"
-
 
 void* logger(void* input) {
 
@@ -20,30 +18,23 @@ void* logger(void* input) {
 
 		pthread_mutex_lock(shared_lock->mutex);
 
-            while (*(shared_lock->full) == 0) pthread_cond_wait(shared_lock->cond2, shared_lock->mutex);
+        while (*(shared_lock->full) == 0) pthread_cond_wait(shared_lock->cond2, shared_lock->mutex);
+	    msg = readPipe(loggerPipe);
+		if (msg == NULL) continue;
 
-	        msg = readPipe(loggerPipe);
-
-			if (msg == NULL) continue;
-
-			if (strcmp(msg, "TERMINATE_LOGGER") == 0) {
-				free(msg);
-				break;
-			}
-
-			logFile = fopen("log.txt", "a+b");
-			fwrite(msg, 1, strlen(msg), logFile);
-			fclose(logFile);
+		if (strcmp(msg, "TERMINATE_LOGGER") == 0) {
 			free(msg);
+			break;
+		}
 
-            *(shared_lock->full) = 0;
+		logFile = fopen("log.txt", "a+b");
+		fwrite(msg, 1, strlen(msg), logFile);
+		fclose(logFile);
+		free(msg);
 
-            pthread_cond_signal(shared_lock->cond1); 
-
+        *(shared_lock->full) = 0;
+        pthread_cond_signal(shared_lock->cond1); 
         pthread_mutex_unlock(shared_lock->mutex);
-
 	}
-	printf("cazzo\n");
 	return NULL;
-
 }

@@ -16,11 +16,12 @@
 	int isDirectory(const char*);
 	int isRegularFile(const char*);
 	int existsDir(char*);
-	int existsDir(char*) ;
+	int existsFile(char*);
+	void freeArray(char **, int);
 	int countDirElements(char*);
-	size_t getFileSize(char* file_name);
-	char* readFile(char*, size_t*);
 	char** listDir(char*, int*);
+	size_t getFileSize(char*);
+	char* readFile(char*, size_t*);
 	void* create_shared_memory(size_t);
 	int free_shared_memory(void*, size_t);
 

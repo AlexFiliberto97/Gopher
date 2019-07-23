@@ -17,16 +17,16 @@ struct Dict {
 	int err;
 };
 
-
 void freeList(char **list, int count) {
+	
 	for (int i = 0; i < count; i++) {
 		free(list[i]);
 	}
 	free(list);
 }
 
-
 char* cpyalloc(char* source) {
+	
 	char* res = (char*) malloc(strlen(source) + 1);
 	if (res == NULL) {
 		throwError(1, ALLOC_ERROR);
@@ -35,7 +35,6 @@ char* cpyalloc(char* source) {
 	strcpy(res, source);
 	return res;
 }
-
 
 char* slice(char *text, int lo, int hi) {
 
@@ -158,7 +157,6 @@ char* getExtension(char* filename) {
 char* concatList(char** list, int count, char separator) {
 
 	char* s = (char*) malloc(1);
-
     if (s == NULL) {
 		throwError(1, ALLOC_ERROR);
 		return NULL;
@@ -260,8 +258,8 @@ char* fixPath(char* path) {
 		if (path[i] == '/' && path[i+1] == '/') continue;
 		fixed_path[c++] = path[i];
 	}
-	fixed_path = (char*) realloc(fixed_path, strlen(fixed_path) + 1);
 
+	fixed_path = (char*) realloc(fixed_path, strlen(fixed_path) + 1);
 	if (fixed_path == NULL) {
 		throwError(1, ALLOC_ERROR);
 		return NULL;
@@ -292,6 +290,7 @@ int isNumeric(char* str) {
 }
 
 void printlog(char* format, int n, char* s) {
+    
     printf(format, n);
     #ifdef __linux__
         syslog(LOG_INFO, format, n);

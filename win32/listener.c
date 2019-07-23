@@ -51,13 +51,21 @@ int main(int argc, char** argv) {
 	}
 
 	struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
+	if (hd == NULL) return ALLOC_ERROR;
 
 	hd->sock = atoi(argv[0]);
 	hd->port = atoi(argv[6]);
 	hd->cli_data = (char*) malloc(strlen(argv[4]) + 1);
+	if (hd->cli_data == NULL) return ALLOC_ERROR;
+	
 	hd->address = (char*) malloc(strlen(argv[5]) + 1);
+	if (hd->address == NULL) return ALLOC_ERROR;
+	
 	hd->root_path = (char*) malloc(strlen(argv[7]) + 1);
+	if (hd->root_path == NULL) return ALLOC_ERROR;
+	
 	hd->abs_root_path = (char*) malloc(strlen(argv[8]) + 1);
+	if (hd->abs_root_path == NULL) return ALLOC_ERROR;
 
 	strcpy(hd->cli_data, argv[4]);
 	strcpy(hd->address, argv[5]);

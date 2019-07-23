@@ -245,7 +245,6 @@ char** gopherListDir(char* path, char* req, int *n, struct HandlerData* hd) {
 
 char* handleRequest(char* request, long long* response_sz, int* mapping, struct HandlerData* hd, int process_mode) {
 	
-	printf("Richiesta:\n  %s\n", request);
 	char* response;
 	int type = -1;
 	char* req_path = (char*) malloc(strlen(hd->abs_root_path) + strlen(request) + 1);

@@ -10,49 +10,39 @@
 
 #define MAX_PROCESS 1024
 
-
 struct Process {
+	
 	pid_t pid;
 	int running;
 };
 
-
 static struct Process Processes[MAX_PROCESS];
 static int PROCESS_COLLECTOR_ALIVE = 1;
 
-
 void initProcess() {
+	
 	for (int i = 0; i < MAX_PROCESS; i++) {
 		Processes[i].running = 0;
 		Processes[i].pid = -1;
 	}
 }
 
-
 int processIndex() {
 	
-	// LOCK MUTEX
-
 	for (int i = 0; i < MAX_PROCESS; i++) {
 		if (Processes[i].running == 0) {
 			return i;
 		}
 	}
-
-	// UNLOCK MUTEX
 	return PROCESS_UNAVAILABLE;
 }
 
-
-// int startProcess(void* (*f)(void*), int argc, char** argv) {
 int startProcess(void* (*f)(void*), void* data) {
 
 	int index = processIndex();
-
 	if (index == PROCESS_UNAVAILABLE) return index;
 
 	pid_t pid = fork();
-
 	if (pid < 0) {
 		return FORK_ERROR;
 	} else if (pid > 0) {
@@ -64,38 +54,30 @@ int startProcess(void* (*f)(void*), void* data) {
 	signal(SIGCHLD, SIG_IGN);
     signal(SIGHUP, SIG_IGN);
     signal(SIGINT, SIG_IGN);
-    
 	f((void*) data);
-
 	exit(0);
-
 }
-
 
 void* processCollector(void* input) {
 
 	int status;
-
 	while (PROCESS_COLLECTOR_ALIVE == 1) {
 		for (int i = 0; i < MAX_PROCESS; i++) {
 			if (Processes[i].running == 1 && waitpid(Processes[i].pid, &status, WNOHANG) == -1) {
 				Processes[i].running = 0;
-				printlog("Process with id %d is now collected\n", i, NULL);
 			}
 		}
 	}
-
 	return NULL;
-	
 }
 
 void stopProcessCollector() {
+	
 	PROCESS_COLLECTOR_ALIVE = 0;
 }
 
-
-//Destroy the process environment
 void destroyProcess() {
+	
 	int status, err;
 	for (int i = 1; i < MAX_PROCESS; i++) {
 		if (Processes[i].pid > 0) {

@@ -4,9 +4,11 @@
 	
 	#include "process.c"
 	
-	// int startProcess(void* (*f)(void*), int, char**);
-	int startProcess(void* (*f)(void*), void*);
+	void initProcess();
 	int processIndex();
+	int startProcess(void* (*f)(void*), void*);
 	void* processCollector(void*);
+	void stopProcessCollector();
+	void destroyProcess();
 
 #endif

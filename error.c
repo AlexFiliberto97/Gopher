@@ -135,7 +135,11 @@ char* errorCode(int err) {
 		case -64:
 			return strcpy(msg, "-> Error setting the signal handler.\n");
 		case -65:
-			return strcpy(msg, "-> Error setting the signal handler.\n");
+			return strcpy(msg, "-> Error setting up daemon.\n");
+		case -66:
+			return strcpy(msg, "-> Error creating mutex.\n");
+		case -67:
+			return strcpy(msg, "-> Error creating semaphore.\n");
 	}
 	return NULL;
 }

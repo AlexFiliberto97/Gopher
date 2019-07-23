@@ -60,6 +60,8 @@
 	#define CLOSE_FD_ERROR -63
 	#define SIGEVENT_ERROR -64
 	#define DAEMON_ERROR -65
+	#define CREATE_MUTEX -66
+	#define CREATE_SEMAPHORE -67
 	
 	int getSystemError();
 	char* errorCode(int);

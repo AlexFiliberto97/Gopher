@@ -13,22 +13,16 @@
 #include "../utils.h"
 #include "../error.h"
 
-
 void* createAndOpenMapping(char* path, long long* size, int process_mode) { 
 
-	// LOCK
-
 	*size = getFileSize(path);
-
 	int fd = open(path, O_RDONLY);
-	
 	if (fd == -1) {
 		throwError(1, CREATE_MAPPING);
 		return NULL;
 	}
 
     void* map = mmap(NULL, *size, PROT_READ, MAP_SHARED, fd, 0);
-
 	if (map == MAP_FAILED) {
 		close(fd);
 		throwError(1, CREATE_MAPPING);
@@ -37,7 +31,7 @@ void* createAndOpenMapping(char* path, long long* size, int process_mode) {
 
     close(fd);
 
-    // UNLOCK
+
 
     return map;
 

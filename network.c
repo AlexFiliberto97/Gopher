@@ -20,6 +20,7 @@
 #define RECVBUF_SIZE 64
 
 struct SendFileData {
+	
 	u_int sock;
 	char* response;
 	void** maps;
@@ -69,9 +70,7 @@ char* getClientAddress(struct sockaddr_in cli_addr) {
 
 int checkPort(int port) {
 	
-	if(port >= 1024 && port < 65535) {
-		return 0;
-	}
+	if(port >= 1024 && port < 65535) return 0;
 	return -1;
 }
 
@@ -136,68 +135,7 @@ int sendAll(int sock, char* data, long long file_sz) {
 	free(sendbuf);
 	if (bytes_left > 0) return SEND_ERROR;
 	return 0;
-
 }
-    
-// int sendFile(int sock, void** maps, long long file_sz) {
-
-	// int n_maps = file_sz / MAX_MAP_SIZE;
-	// if (file_sz % MAX_MAP_SIZE > 0) n_maps++;
-
-	// void *sendbuf = (void *) malloc(SENDBUF_SIZE);
-	// if (sendbuf == NULL) {
-	// 	printf("Errore in fun - malloc\n");
-	// 	return 1;
-	// }
-
-	// for (int i = 0; i < n_maps; i++) {
-
-	// 	printf("INVIO UNA BANANA %d\n", n_maps);
-
-	// 	void* cur_map = maps[i];
-
-	// 	long long bytes_sent, bytes_left;
-
-	// 	if (i == n_maps - 1) {
-	// 		bytes_left = file_sz % MAX_MAP_SIZE;
-	// 	} else {
-	// 		bytes_left = MAX_MAP_SIZE;
-	// 	}
-
-	// 	int n_packet = 0;
-
-	// 	while (bytes_left > 0) {
-
-	// 		if (bytes_left < SENDBUF_SIZE) {
-	// 			memcpy((void*) sendbuf, &cur_map[SENDBUF_SIZE * n_packet++], bytes_left);
-	// 			bytes_sent = send(sock, sendbuf, bytes_left, 0);
-	// 			bytes_left -= bytes_sent;
-	// 		} else {
-	// 			memcpy((void*) sendbuf, &cur_map[SENDBUF_SIZE * n_packet++], SENDBUF_SIZE);
-	// 			bytes_sent = send(sock, sendbuf, SENDBUF_SIZE, 0);
-	// 			bytes_left -= bytes_sent;
-	// 		}
-
-	// 		if (bytes_sent == -1) {
-	// 			free(sendbuf);
-	// 			return SEND_ERROR;
-	// 		}
-
-	// 	}
-
-	// 	if (bytes_left > 0) {
-	// 		free(sendbuf);
-	// 		printf("Errore in sendAll\n");
-	// 		return 2;
-	// 	}
-
-	// }	
-
-	// free(sendbuf);
-
-	// return 0;
-
-// }
 
 int ipFormatCheck(char* address) {
 	
