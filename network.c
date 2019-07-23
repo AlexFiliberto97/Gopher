@@ -27,8 +27,6 @@ struct SendFileData {
 	int err;
 };
 
-
-//jkkdfjebfkjwebcfkew
 char* getClientAddress(struct sockaddr_in cli_addr) {
 
 	char port[6], b1[4], b2[4], b3[4], b4[4];
@@ -66,11 +64,9 @@ char* getClientAddress(struct sockaddr_in cli_addr) {
 	}
 
 	sprintf(client_address, "%s.%s.%s.%s:%s", b1, b2, b3, b4, port);	
-	printf("%s\n", client_address);
 	return client_address;
 }
 
-//kjedjbwekcbwk
 int checkPort(int port) {
 	
 	if(port >= 1024 && port < 65535) {
@@ -79,7 +75,6 @@ int checkPort(int port) {
 	return -1;
 }
 
-//iuewfkjwefnewjfkwejfweb
 char* recvAll(int sock, size_t* len) {
 	
 	char *msg = (char *) malloc(1);
@@ -108,10 +103,8 @@ char* recvAll(int sock, size_t* len) {
     return msg;
 }
 
-
 int sendAll(int sock, char* data, long long file_sz) {
 	
-
 	void *sendbuf = (void *) malloc(SENDBUF_SIZE);
 	if (sendbuf == NULL) {
 		throwError(1, ALLOC_ERROR);
@@ -206,27 +199,25 @@ int sendAll(int sock, char* data, long long file_sz) {
 
 // }
 
-
 int ipFormatCheck(char* address) {
 	
-	if (strlen(address) < 7 || strlen(address) > 15) return -1;
+	if (strlen(address) < 7 || strlen(address) > 15) return BAD_ADDRESS;
 
 	int count;
 	char** list = split(address, '.', &count);
 	if (list == NULL) return ALLOC_ERROR;
 
-	if (count != 4) return -1;
+	if (count != 4) return BAD_ADDRESS;
 
 	int err = 0;
 
 	for (int i = 0; i < 4; i++) {
 		if (strlen(list[i]) == 0 || strlen(list[i]) > 3 || isNumeric(list[i]) != 0 || atoi(list[i]) < 0 || atoi(list[i]) > 255) {
-			err = -1;
+			err = BAD_ADDRESS;
 			break;
 		}
 	}
 
 	freeList(list, count);
 	return err;
-
 }

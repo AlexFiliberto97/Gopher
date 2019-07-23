@@ -179,8 +179,7 @@ int serverInit(int argc, char** args) {
 	freeServerOptions();
 	int confErr = getConfig();
 	if (confErr != 0) {
-		throwError(1, confErr);
-		return -1;
+		return confErr;
 	}
 
 	int optsErr = getOpts(argc, args);

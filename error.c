@@ -155,7 +155,6 @@ void throwError(int num, ...) {
    	for (int i = 0; i < num; i++) {
 
         int errCode = va_arg(valist, int);
-   		
    		char* msg = errorCode(errCode);
    		if (msg != NULL) {
    			fwrite(msg, 1, strlen(msg), errLog);
@@ -169,8 +168,8 @@ void throwError(int num, ...) {
    		char err[11];
    		sprintf(err, "%d", sysErr);
    		fwrite(err, 1, strlen(err), errLog);
-
    	}
-   	fwrite(" >>>\n\n", 1, strlen(">>>\n\n"), errLog);
+
+   	fwrite(" >>>\n\n", 1, strlen(" >>>\n\n"), errLog);
    	fclose(errLog);
 }
