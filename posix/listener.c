@@ -12,7 +12,9 @@ void* listener(void* input){
 
 	struct HandlerData* hd = (struct HandlerData*) input;
 
-	handler((void*) hd, 1);
+	int err = handler((void*) hd);
+
+	if (err != 0) throwError(1, err);
 
 	return NULL;
 

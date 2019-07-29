@@ -6,9 +6,9 @@
 	#include <windows.h>
 	#include "mapping.c"
 
-	HANDLE createMapping(char*, char*, size_t*, int);
+	int createMapping(char*, char*, struct FileMap*);
 	HANDLE openMapping(char*);
-	char* readMapping(HANDLE);
-	int deleteMapping(char*);
+	void* readMapping(struct FileMap*, long long, int*, int*);
+	int deleteMapping(char*, int);
 
 #endif

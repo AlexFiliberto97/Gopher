@@ -10,92 +10,192 @@
 #include <assert.h>
 #include <pthread.h>
 #include "process.h"
-// #include "utils_posix.h"
 #include "../utils.h"
+#include "../error.h"
+#include "locking.h"
 
-#define MAX_MAP_SIZE 1073741824
+#define MAP_VIEW_SIZE 8388608 // 8 MB
+#define CACHE_SIZE 12
 
 
+struct FileMap {
+	char* item;
+	char* mapName;
+	long long size;
+	int err;
+	int fd;
+	struct flock lock;
+};
 
-// struct FileMapping {
-// 	void* map;
-// 	size_t size;
-// };
 
-void* createAndOpenMapping(char* path, long long* size, int process_mode) { 
+struct CachePage {
+	char* item;
+	int n_page;
+	void* view_ptr;
+	long long size;
+	int lru;
+};
 
-	// LOCK
 
-	*size = getFileSize2(path);
+struct CachePage cache[CACHE_SIZE];
 
-	int fd = open(path, O_RDONLY);
-	assert(fd != -1);
 
-    void* map = mmap(NULL, *size, PROT_READ, MAP_SHARED, fd, 0);
+void initCache() {
+	for (int i = 0; i < CACHE_SIZE; i++) {
+		cache[i].item = NULL;
+		cache[i].n_page = -1;
+		cache[i].view_ptr = NULL;
+		cache[i].size = -1;
+		cache[i].lru = 0;
+	}
+}
 
-    close(fd);
 
-    // UNLOCK
+int pageIndex(char* item) {
 
-    return map;
+	int older = 0;
+	int index = -1;
+
+	for (int i = 0; i < CACHE_SIZE; i++) {
+		if (cache[i].item == NULL) return i;
+	}
+
+	for (int i = 0; i < CACHE_SIZE; i++) {
+
+		if (strcmp(item, cache[i].item) != 0) {
+			if (cache[i].lru > older) {
+				older = cache[i].lru;
+				index = i;
+			}
+		}
+
+	}
+
+	if (index != -1) return index;
+
+	for (int i = 0; i < CACHE_SIZE; i++) {
+
+		if (cache[i].lru < older) {
+			older = cache[i].lru;
+			index = i;
+		}
+	}
+
+	return index;
+
+}
+
+int checkCache(char* item, int n_page) {
+
+	int index = -1;
+
+	for (int i = 0; i < CACHE_SIZE; i++) {
+		if (cache[i].item != NULL && strcmp(cache[i].item, item) == 0 && cache[i].n_page == n_page) {
+			printf("Cache HIT: %s\n", item);
+			index = i;
+		} else {
+			cache[i].lru++;
+		}
+	}
+	if (index == -1) printf("Cache MISS: %s\n", item);
+	return index;
 
 }
 
 
-int deleteMapping(void* map, size_t size) {
+void freeFileMapStruct(struct FileMap* fmap) {
+	free(fmap->item);
+	free(fmap->mapName);
+	free(fmap);
+}
 
-	int err = munmap(map, size);
 
-	if (err != 0) return -1;
+int createMapping(char* item, char* ignore, struct FileMap* fmap) {
 
-	return 0;
+	fmap->size = getFileSize(item);
+
+	int fd = open(item, O_RDWR);
+	if (fd == -1) {
+		fmap->err = 1;
+		throwError(1, CREATE_MAPPING);
+		return -1;
+	}
+
+	fmap->fd = fd;
+
+	fmap->lock = create_lock();
+
+	fmap->item = (char*) malloc(strlen(item) + 1);
+	if (fmap->item == NULL) {
+		fmap->err = 1;
+		close(fd);
+		throwError(1, ALLOC_ERROR);
+		return -1;
+	}
+	strcpy(fmap->item, item);
+
+	fmap->err = 0;
+
+    return 0;
 
 }
 
 
-// struct FileMapping {
-// 	void* map;
-// 	size_t size;
-// };
+int deleteView(char* view_ptr, int ignore, int size) {
+	return free_shared_memory(view_ptr, size);
+}
 
-// void* createAndOpenMapping(char* path, long long* size, int process_mode, pthread_mutex_t* mutex) { 
-// // void** createAndOpenMapping(char* path, long long* size, int process_mode) { 
 
-// 	// LOCK
-// 	pthread_mutex_lock(mutex);
+void* readMapping(struct FileMap* fmap, long long offset, int* n_bytes, int* ignore) {
 
-// 	*size = getFileSize2(path);
+	char* item = cpyalloc(fmap->item);
+	if (item == NULL) return NULL;
 
-// 	int fd = open(path, O_RDONLY);
-// 	assert(fd != -1);
+	int n_page = offset / MAP_VIEW_SIZE;
 
-//     void* map = mmap(NULL, *size, PROT_READ, MAP_SHARED, fd, 0);
+	int index = checkCache(item, n_page);
 
-//     close(fd);
+	if (index != -1) {
+		cache[index].lru = 0;
+		*n_bytes = cache[index].size;
+		free(item); 
+		return cache[index].view_ptr;
+	}
 
-//     // UNLOCK
-// 	pthread_mutex_unlock(mutex);
+	int page_index = pageIndex(item);
+	// free(cache[page_index].item);
+	// deleteView(cache[page_index].view_ptr, 0, cache[page_index].size);
+	cache[page_index].item = item;
+	cache[page_index].n_page = n_page;
 
-//     return map;
+	long long bytes_left = fmap->size - offset;
 
-// 	// int fd = open(path, O_RDONLY);
-// 	// assert(fd != -1);
+	if (bytes_left >= MAP_VIEW_SIZE) {
+		*n_bytes = MAP_VIEW_SIZE;
+	} else {
+		*n_bytes = bytes_left;
+	}
 
-// 	// *size = getFileSize2(path);
+	cache[page_index].size = *n_bytes;
 
-// 	// int n_maps = *size / MAX_MAP_SIZE;
-// 	// if (*size % MAX_MAP_SIZE > 0) n_maps++;
+	cache[page_index].view_ptr = mmap(NULL, (size_t) *n_bytes, PROT_READ, MAP_SHARED, fmap->fd, (off_t) offset);
+	if (cache[page_index].view_ptr == MAP_FAILED) {
+		close(fmap->fd);
+		free(cache[page_index].item);
+		cache[page_index].item = NULL;
+		fmap->err = 1;
+		throwError(1, CREATE_MAPPING);
+		return NULL;
+	}
 
-// 	// void** maps = (void**) malloc(sizeof(void*) * n_maps);
+	cache[page_index].lru = 0;
 
-// 	// for (int i = 0; i < n_maps; i++) {
-// 	// 	if (i == n_maps - 1) {
-// 	// 		maps[i] = mmap(NULL, *size %  MAX_MAP_SIZE, PROT_READ, MAP_SHARED, fd, i * MAX_MAP_SIZE);	
-// 	// 	} else {
-// 	// 		maps[i] = mmap(NULL, (size_t) MAX_MAP_SIZE, PROT_READ, MAP_SHARED, fd, i * MAX_MAP_SIZE);
-// 	// 	}
-// 	// }
+	fmap->err = 0;
+	return cache[page_index].view_ptr;
 
-// 	// return maps;
+}
 
-// }
+
+void closeMapping(struct FileMap* fmap) {
+	close(fmap->fd);
+}

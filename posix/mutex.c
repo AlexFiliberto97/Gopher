@@ -9,6 +9,7 @@
 #include "process.h"
 #include "thread.h"
 #include <sys/mman.h>
+#include "../error.h"
 
 
 struct Lock {
@@ -31,7 +32,7 @@ int initLocking() {
 
 	mutex = (pthread_mutex_t*) create_shared_memory(sizeof(pthread_mutex_t));
     if (mutex == MAP_FAILED)
-        return -1;
+        return CREATE_MAPPING;
 
     pthread_mutexattr_t mutex_attr;
     pthread_mutexattr_init(&mutex_attr);
@@ -41,7 +42,7 @@ int initLocking() {
 
     cond1 = (pthread_cond_t*) create_shared_memory(sizeof(pthread_cond_t));
     if (cond1 == MAP_FAILED)
-        return -1;
+        return CREATE_MAPPING;
 
     pthread_condattr_t cond1_attr;
     pthread_condattr_init(&cond1_attr);
@@ -51,7 +52,7 @@ int initLocking() {
 
     cond2 = (pthread_cond_t*) create_shared_memory(sizeof(pthread_cond_t));
     if (cond2 == MAP_FAILED)
-        return -1;
+        return CREATE_MAPPING;
 
     pthread_condattr_t cond2_attr;
     pthread_condattr_init(&cond2_attr);
@@ -61,13 +62,13 @@ int initLocking() {
 
     full = (int*) create_shared_memory(sizeof(int));
     if (full == MAP_FAILED)
-        return -1;
+        return CREATE_MAPPING;
 
     *full = 0;
 
     shared_lock = (struct Lock*) create_shared_memory(sizeof(struct Lock));
     if (shared_lock == MAP_FAILED)
-        return -1;
+        return CREATE_MAPPING;
     shared_lock->mutex = mutex;
     shared_lock->cond1 = cond1;
     shared_lock->cond2 = cond2;
@@ -78,12 +79,19 @@ int initLocking() {
 }
 
 
-void destroySharedLock() {
-    free_shared_memory((void*) shared_lock->cond1, sizeof(shared_lock->cond1));
-    free_shared_memory((void*) shared_lock->cond2, sizeof(shared_lock->cond2));
-    free_shared_memory((void*) shared_lock->mutex, sizeof(shared_lock->mutex));
-    free_shared_memory((void*) shared_lock->full, sizeof(shared_lock->full));
-    free_shared_memory((void*) shared_lock, sizeof(shared_lock));
+int destroySharedLock() {
+    int err = 0;
+    err = free_shared_memory((void*) shared_lock->cond1, sizeof(shared_lock->cond1));
+    if (err == DELETE_MAPPING) throwError(1, err);
+    err = free_shared_memory((void*) shared_lock->cond2, sizeof(shared_lock->cond2));
+    if (err == DELETE_MAPPING) throwError(1, err);
+    err = free_shared_memory((void*) shared_lock->mutex, sizeof(shared_lock->mutex));
+    if (err == DELETE_MAPPING) throwError(1, err);
+    err = free_shared_memory((void*) shared_lock->full, sizeof(shared_lock->full));
+    if (err == DELETE_MAPPING) throwError(1, err);
+    err = free_shared_memory((void*) shared_lock, sizeof(shared_lock));
+    if (err == DELETE_MAPPING) throwError(1, err);
+    return err;
 }
 
 

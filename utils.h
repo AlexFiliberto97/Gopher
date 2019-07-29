@@ -2,11 +2,9 @@
 
 	#define UTILS_H_
 
-	#include <stdio.h>
-	#include <stdlib.h>
 	#include "utils.c"
 
-	int fileSize(FILE*);
+	char* cpyalloc(char*);
 	char* slice(char*, int, int);
 	int countChar(char*, char, int**);
 	char** splitPos(char*, int*, int);

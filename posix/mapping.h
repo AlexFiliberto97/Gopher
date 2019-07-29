@@ -4,8 +4,10 @@
 
 	#include "mapping.c"
 
-	// void** createAndOpenMapping(char*, long long*, int);
-	void* createAndOpenMapping(char*, long long*, int);
-	int deleteMapping(void*, size_t);
+	void freeFileMapStruct(struct FileMap*);
+	int createMapping(char*, char*, struct FileMap*);
+	void* readMapping(struct FileMap*, long long, int*, int*);
+	int deleteView(char* view_ptr, int, int);
+	void closeMapping(struct FileMap*);
 
 #endif

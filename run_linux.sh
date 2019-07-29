@@ -1,7 +1,8 @@
 pkill main
 rm main
+> error.log
 clear
 
-gcc -Wall main.c -o main -pthread -D_GNU_SOURCE
+gcc main.c -o main -pthread -D_GNU_SOURCE
 
 ./main

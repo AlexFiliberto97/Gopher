@@ -2,18 +2,14 @@
 	
 	#define PIPE_H_
 
-	#include <stdio.h>
 	#include "pipe.c"
-	
-	void initPipes();
-	int newpipeIndex();
-	int pipeIndex(char*);
-	int createPipe(char*);
-	HANDLE getReader(char*);
-	HANDLE getWriter(char*);
-	int addPipe(char*, HANDLE, HANDLE);
-	int writePipe(char*, char*);
-	char* readPipe(char*);
-	void destroyPipes();
+
+	int createLoggerPipe();
+	HANDLE getReader();
+	HANDLE getWriter();
+	void addPipe(HANDLE, HANDLE);
+	int writePipe(char*);
+	char* readPipe();
+	void destroyLoggerPipe();
 
 #endif

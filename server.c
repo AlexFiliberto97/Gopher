@@ -19,32 +19,23 @@
 	#include "posix/listener.c"
 	#include <unistd.h>
 	#include <string.h>
-	#include <fcntl.h>
 	#include <sys/socket.h>
 	#include <netinet/in.h>
 	#include <arpa/inet.h>
 	#include <errno.h>
-	#include <sys/select.h>
 #endif
 
-//Prototipes
 int getOpts(int, char**);
 int getConfig();
 int serverInit(int, char**);
 int serverStart();
 int serverService();
 int serverReload();
-void serverCleanup(int);
+void closeSocket(int);
 void serverStop();
 
-
-/*
-	NB: la connessione resta aperta se fallisce malloc realloc o continue in generale
-	NB: la root_path va controllata prima di tutto (creare una gerarchia tra root)
-*/
-
-//Global structs
 struct Opts {
+	
 	int sock;
 	int port;
 	int process_mode;
@@ -53,23 +44,22 @@ struct Opts {
 	char* abs_root_path;
 };
 
-
-//Global variables
 static struct Opts serverOptions;
 static int SERV_RUNNING = 1;
 
-
 void freeServerOptions() {
+
 	serverOptions.sock = -1;
-	serverOptions.port = -1;
+	serverOptions.port = 7070;
 	serverOptions.process_mode = 0;
-	free(serverOptions.address);
-	free(serverOptions.root_path);
-	free(serverOptions.abs_root_path);
+	if (serverOptions.address != NULL) free(serverOptions.address);
+	if (serverOptions.root_path != NULL) free(serverOptions.root_path);
+	if (serverOptions.abs_root_path != NULL) free(serverOptions.abs_root_path);
+	serverOptions.address = NULL;
+	serverOptions.root_path = NULL;
+	serverOptions.abs_root_path = NULL;
 }
 
-
-//Get server config from command line
 int getOpts(int argc, char** args) {
 
 	int port = -1, process_mode = -1;
@@ -88,8 +78,6 @@ int getOpts(int argc, char** args) {
 
 }
 
-
-//Get server config from config file
 int getConfig() {
 
 	int config_count;
@@ -101,27 +89,22 @@ int getConfig() {
 	if (config_dict.err != 0) return ALLOC_ERROR;
 	freeList(config_assoc_list, config_count);
 
-	// ADDRESS
 	char* address_v = getAssocValue("address", config_dict);
-
 	if (address_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} else if (ipFormatCheck(address_v) != 0) {
 		freeDict(config_dict);
-		return -909; // BAD_ADDRESS
+		return BAD_ADDRESS;
 	}
 
-	serverOptions.address = (char*) malloc(strlen(address_v) + 1);
+	serverOptions.address = cpyalloc(address_v);
 	if (serverOptions.address == NULL) { 
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
-	strcpy(serverOptions.address, address_v);
 
-	// PORT
 	char* port_v = getAssocValue("port", config_dict);
-
 	if (port_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
@@ -132,47 +115,38 @@ int getConfig() {
 		freeDict(config_dict);
 		return BAD_PORT;
 	}
+	
 	serverOptions.port = port;
-
-	// PROCESS MODE
 	char* process_mode_v = getAssocValue("process", config_dict);
-
 	if (process_mode_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} 
 
-
 	int process_mode = atoi(process_mode_v);
-
 	if (process_mode != 0 && process_mode != 1) {
 		freeDict(config_dict);
 		return BAD_PMODE;
 	}
+
 	serverOptions.process_mode = process_mode;
-
-	// ROOT PATH
 	char* root_path_v = getAssocValue("root", config_dict);
-
 	if (root_path_v == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	} 
 
-	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) == 0)) {
-		printlog("ERROR: il percorso root assoluto deve terminare con '/', non deve contenere '\\' e deve essere valido.\n", 0, NULL);
+	if ((root_path_v[strlen(root_path_v)-1] != '/') || (existsDir(root_path_v) != 0)) {
 		freeDict(config_dict);
 		return BAD_ROOT;
 	}
 
-	serverOptions.abs_root_path = (char*) malloc(strlen(root_path_v) + 1);
+	serverOptions.abs_root_path = cpyalloc(root_path_v);
 	if (serverOptions.abs_root_path == NULL) {
 		freeDict(config_dict);
 		return ALLOC_ERROR;
 	}
 
-	strcpy(serverOptions.abs_root_path, root_path_v);
-	
 	if (strcmp(root_path_v, "/") == 0 || strcmp(&root_path_v[1], ":/") == 0) {
 		serverOptions.root_path = (char*) malloc(strlen(root_path_v) + 1);
 		strcpy(serverOptions.root_path, root_path_v);
@@ -182,71 +156,59 @@ int getConfig() {
 		if (last_occ == -1) {
 			freeDict(config_dict);
 			return -1;
-		} //CHECK LATER
+		}
 
 		char* rel_root_path = slice(root_path_v, last_occ + 1, strlen(root_path_v));
 		if (rel_root_path == NULL) {
 			freeDict(config_dict);
 			return -1;
-		} //CHECK LATER
+		}
 
-		serverOptions.root_path = (char*) malloc(strlen(rel_root_path) + 1);
+		serverOptions.root_path = cpyalloc(rel_root_path);
 		if (serverOptions.root_path == NULL) {
 			free(rel_root_path);
 			freeDict(config_dict);
 			return ALLOC_ERROR;
 		}
-		strcpy(serverOptions.root_path, rel_root_path);
 		free(rel_root_path);
 	}
-
 	freeDict(config_dict);
-
 	return 0;
 }
-
 
 int serverInit(int argc, char** args) {
 
 	freeServerOptions();
-
 	int confErr = getConfig();
 	if (confErr != 0) {
-		throwError(1, confErr);
-		printlog("ERROR: getConfig", 0, NULL);
-		return -1;
+		return confErr;
 	}
-	// int optsErr = getOpts(argc, args);
-	// if (confErr != 0 && optsErr != 0) {
-	// 	return confErr;
-	// } else {
-	// 	if (optsErr != 0) throwError(1, optsErr);
-	// 	if (confErr != 0) throwError(1, confErr);
-	// }
+	
+	int optsErr = getOpts(argc, args);
+	if (confErr != 0 && optsErr != 0) {
+		return confErr;
+	} else {
+		if (optsErr != 0) throwError(1, optsErr);
+		if (confErr != 0) throwError(1, confErr);
+	}
 	
 	#ifndef __linux__
 		WSADATA wsaData;
 		int err	= WSAStartup(514, &wsaData);
 		if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2 || err != 0) {
-			serverCleanup(-1);
 			throwError(1, SERVER_ERROR_S);
 			return WSA_ERROR;
 		}
 	#endif
-
 	return 0;
-
 }
 
-
-//Start the server
 int serverStart() {
 
 	int err;
-
 	int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sock == -1) { 
-		serverCleanup(sock);
+	if (sock == -1) {
+		closeSocket(sock);
 		throwError(1, SERVER_ERROR_S); 
 		return SOCK_ERROR;
 	}
@@ -256,10 +218,11 @@ int serverStart() {
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*) &optval, sizeof(int));
 	#else
 		err = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+		err |= setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &(int){ 1 }, sizeof(int));
 	#endif
 
 	if (err < 0) {
-		serverCleanup(sock);
+		closeSocket(sock);
 		throwError(1, SERVER_ERROR_S); 
 		return SOCK_ERROR; 
 	}
@@ -270,22 +233,19 @@ int serverStart() {
 	service.sin_port = htons(serverOptions.port);
 	err = bind(sock, (struct sockaddr*) &service, sizeof(service));
 	if (err == -1) {
-		serverCleanup(sock);
+		closeSocket(sock);
 		throwError(1, SERVER_ERROR_S); 
 		return BIND_ERROR;
 	}
 	serverOptions.sock = sock;
 	return 0;
-
 }
 
-
-//Handle the incoming requests
 int serverService() {
 
 	int err = listen(serverOptions.sock, 10);
 	if (err == -1) {
-		serverCleanup(serverOptions.sock);
+		closeSocket(serverOptions.sock);
 		throwError(1, SERVER_ERROR_S); 
 		return LISTEN_ERROR;
 	} 
@@ -297,17 +257,14 @@ int serverService() {
 		fd_set readSet;
 		FD_ZERO(&readSet);
 		FD_SET(serverOptions.sock, &readSet);
-		struct timeval timeout = {2, 0};
-
+		struct timeval timeout = {1, 0};
 
 		err = select(serverOptions.sock + 1, &readSet, NULL, NULL, &timeout);
-
 		if (err == -1) {
 			#ifdef __linux__
 				if (errno == 4) continue;
 			#endif
-			printlog("ERR %d", errno, NULL);
-			serverCleanup(serverOptions.sock);
+			closeSocket(serverOptions.sock);
 			throwError(2, SERVER_ERROR_H, SELECT_ERROR);
 			continue;
 		}
@@ -325,40 +282,46 @@ int serverService() {
 		char* cli_data = getClientAddress(cli_addr);
 		if (cli_data == NULL) {
 			throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
+			closeSocket(acceptSocket);
 			continue; 
 		}
 
 		if (serverOptions.process_mode == 0) {
 			struct HandlerData* hd = (struct HandlerData*) malloc(sizeof(struct HandlerData));
-			hd->cli_data = (char*) malloc(strlen(cli_data) + 1);
-			hd->address = (char*) malloc(strlen(serverOptions.address) + 1);
-			hd->root_path = (char*) malloc(strlen(serverOptions.root_path) + 1);
-			hd->abs_root_path = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
-			strcpy(hd->cli_data, cli_data);
-			strcpy(hd->address, serverOptions.address);
-			strcpy(hd->root_path, serverOptions.root_path);
-			strcpy(hd->abs_root_path, serverOptions.abs_root_path);
+			if (hd == NULL) {
+				throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
+				closeSocket(acceptSocket);
+				continue; 
+			}
+
+			hd->cli_data = cpyalloc(cli_data);
+			hd->address = cpyalloc(serverOptions.address);
+			hd->root_path = cpyalloc(serverOptions.root_path);
+			hd->abs_root_path = cpyalloc(serverOptions.abs_root_path);
+			if (hd->cli_data == NULL || hd->address == NULL || hd->root_path == NULL || hd->abs_root_path == NULL ) {
+				throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
+				closeSocket(acceptSocket);
+				continue; 
+			}
+			
 			hd->sock = acceptSocket;
 			hd->port = serverOptions.port;
-		
-			#ifndef __linux__
-				int th = startThread((void*) handler, (void*) hd);
-				if (th < 0) {
-					printlog("Errore nell'avvio del thread handler\n", 0 NULL);
-					continue;
-				}
-			#else
-				pthread_t th = startThread((void*) handler, (void*) hd, 1);
-				if (th < 0) {
-					printlog("Errore nell'avvio del thread handler\n", 0, NULL);
-					continue;
-				}
-			#endif
-
+			hd->process_mode = 0;
+			int th = startThread((void*) handler, (void*) hd, 1);
+			if (th < 0) {
+				throwError(2, SERVER_ERROR_H, th);
+				closeSocket(acceptSocket);	 
+				continue;
+			}
 		} else {
 
 			#ifndef __linux__
 				char** cmd = (char**) malloc(sizeof(char*) * 9);
+				if (cmd == NULL) {
+					throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
+					closeSocket(acceptSocket);
+					continue; 
+				}		
 	   			cmd[0] = (char*) malloc(11);
 	   			cmd[1] = (char*) malloc(11);
 	   			cmd[2] = (char*) malloc(11);
@@ -368,7 +331,11 @@ int serverService() {
 	   			cmd[6] = (char*) malloc(11);
 	   			cmd[7] = (char*) malloc(strlen(serverOptions.root_path) + 1);
 	   			cmd[8] = (char*) malloc(strlen(serverOptions.abs_root_path) + 1);
-	   			
+	   			if (checkMalloc(cmd, 9) != 0) {
+					throwError(2, SERVER_ERROR_H, ALLOC_ERROR);
+					closeSocket(acceptSocket);
+					continue; 
+				}	
 	   			sprintf(cmd[0], "%d", acceptSocket);
 	   			sprintf(cmd[1], "%d", getWriter("LOGGER_PIPE"));
 	   			sprintf(cmd[2], "%d", eventHandler("WRITE_LOG_EVENT"));
@@ -380,19 +347,33 @@ int serverService() {
 	   			sprintf(cmd[8], "%s", serverOptions.abs_root_path);
 				err = startProcess("win32/listener.exe", 9, cmd);
 				freeList(cmd, 9);
+				// close socket ?
 			#else
 				struct HandlerData* hd = (struct HandlerData*) create_shared_memory(sizeof(struct HandlerData));
+				if (hd == MAP_FAILED) {
+					throwError(2, SERVER_ERROR_H, CREATE_MAPPING);
+					closeSocket(acceptSocket);
+					continue; 
+				}
 				hd->cli_data = (char*) create_shared_memory(strlen(cli_data) + 1);
 				hd->address = (char*) create_shared_memory(strlen(serverOptions.address) + 1);
 				hd->root_path = (char*) create_shared_memory(strlen(serverOptions.root_path) + 1);
 				hd->abs_root_path = (char*) create_shared_memory(strlen(serverOptions.abs_root_path) + 1);
+				if (hd->cli_data == MAP_FAILED || hd->address == MAP_FAILED || hd->root_path == MAP_FAILED || hd->abs_root_path == MAP_FAILED) {
+					throwError(2, SERVER_ERROR_H, CREATE_MAPPING);
+					closeSocket(acceptSocket);
+					continue; 
+				}
+
 				strcpy(hd->cli_data, cli_data);
 				strcpy(hd->address, serverOptions.address);
 				strcpy(hd->root_path, serverOptions.root_path);
 				strcpy(hd->abs_root_path, serverOptions.abs_root_path);
 				hd->sock = acceptSocket;
 				hd->port = serverOptions.port;
+				hd->process_mode = 1;
 				err = startProcess((void*) listener, (void*) hd);
+				close(acceptSocket);
 			#endif
 
 			if (err < 0) {
@@ -404,23 +385,26 @@ int serverService() {
 	}
 
 	SERV_RUNNING = 1;
-	serverCleanup(serverOptions.sock);
+	closeSocket(serverOptions.sock);
 	return 0;
-
 }
 
 
-//Clean the server
-void serverCleanup(int sock) {
+void closeSocket(int sock) {
 	#ifndef __linux__
 		closesocket(sock);
-		WSACleanup();
 	#else
 		close(sock);
 	#endif
 }
 
-//Stop and destroy the server
+
 void serverStop() {
 	SERV_RUNNING = 0;
+}
+
+void serverDestroy() {
+	#ifndef __linux__
+		WSACleanup();
+	#endif
 }

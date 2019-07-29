@@ -12,7 +12,6 @@ struct Process{
 
 static struct Process Processes[MAX_PROCESS];
 
-//Initialize the process environment 
 void initProcess() {
 
 	for (int i = 0; i < MAX_PROCESS; i++) {
@@ -21,7 +20,6 @@ void initProcess() {
 	}
 }
 
-//Return the first available index for a new process
 int processIndex() {
 
 	for (int i = 0; i < MAX_PROCESS; i++){
@@ -32,7 +30,6 @@ int processIndex() {
 	return PROCESS_UNAVAILABLE;
 }
 
-//Start a new win32 process
 int startProcess(char* name, int argc, char** args) {
 
 	char* cmd = concatList(args, argc, ' ');
@@ -55,13 +52,11 @@ int startProcess(char* name, int argc, char** args) {
 	return 0;
 }
 
-//Return TRUE if the process hProcess is running
 BOOL processIsRunning(HANDLE hProcess) {
 
     return WaitForSingleObject(hProcess, 0) == WAIT_TIMEOUT;
 }
 
-//Collect the ended processes
 void* processCollector(void *input){
 
 	while (TRUE) {
@@ -75,12 +70,12 @@ void* processCollector(void *input){
 	}
 }
 
-//Destroy the process environment
 void destroyProcess() {
 
 	for (int i = 0; i < MAX_PROCESS; i++) {
 		if (Processes[i].hProcess != NULL) {
-			TerminateProcess(Processes[i].hProcess, 0);
+			WaitForSingleObject(Processes[i].hProcess, INFINITE);
+			//TerminateProcess(Processes[i].hProcess, 0);
 			CloseHandle(Processes[i].hProcess);
 		}
 	}

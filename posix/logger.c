@@ -24,12 +24,17 @@ void* logger(void* input) {
 
 	        msg = readPipe(loggerPipe);
 
-			if (msg != NULL) {
-				logFile = fopen("log.txt", "a+b");
-				fwrite(msg, 1, strlen(msg), logFile);
-				fclose(logFile);
+			if (msg == NULL) continue;
+
+			if (strcmp(msg, "TERMINATE_LOGGER") == 0) {
 				free(msg);
+				break;
 			}
+
+			logFile = fopen("log.txt", "a+b");
+			fwrite(msg, 1, strlen(msg), logFile);
+			fclose(logFile);
+			free(msg);
 
             *(shared_lock->full) = 0;
 
@@ -38,7 +43,7 @@ void* logger(void* input) {
         pthread_mutex_unlock(shared_lock->mutex);
 
 	}
-
+	printf("cazzo\n");
 	return NULL;
 
 }

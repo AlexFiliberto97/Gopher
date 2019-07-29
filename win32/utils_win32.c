@@ -7,12 +7,24 @@
 
 
 void freeArray(char** list, int c) {
+	
 	for (int i = 0; i < c; i++) {
 		if(list[i] != NULL) {
 			free(list[i]);
 		}
 	}
 	free(list);
+}
+
+
+long long getFileSize(char* path) {
+    WIN32_FILE_ATTRIBUTE_DATA fad;
+    if (!GetFileAttributesEx(path, GetFileExInfoStandard, &fad))
+        return FILE_SIZE_ERROR;
+    LARGE_INTEGER size;
+    size.HighPart = fad.nFileSizeHigh;
+    size.LowPart = fad.nFileSizeLow;
+    return (long long) size.QuadPart;
 }
 
 
@@ -45,8 +57,7 @@ int countDirElements(char *path) {
 	return c;
 }
 
-
-char* readFile(char *fileName) {
+char* readFile(char *fileName, int* ignore) {
 
 	int err;
 	HANDLE hFile = CreateFile(fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -58,7 +69,7 @@ char* readFile(char *fileName) {
 	size_t sz = GetFileSize(hFile, NULL);
 	if (sz == INVALID_FILE_SIZE) {
 		CloseHandle(hFile);
-		throwError(1, FILE_SIZE);
+		throwError(1, FILE_SIZE_ERROR);
 		return NULL;
 	}
 
@@ -74,7 +85,7 @@ char* readFile(char *fileName) {
 	if ((err = GetLastError()) != 0 | rf == 0) {
 		CloseHandle(hFile);
 		free(buf);
-		throwError(1, GENERIC_ERROR);
+		throwError(1, READ_FILE_ERROR);
 		return NULL;
 	}
 
@@ -102,8 +113,7 @@ char* readFile(char *fileName) {
 
 	free(buf);
 	return data;
-} 
-
+}
 
 char** listDir(char *path, int *count) {
 
@@ -172,28 +182,23 @@ char** listDir(char *path, int *count) {
 	return list;
 }
 
-
 int existsDir(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
 	if ((attributes != INVALID_FILE_ATTRIBUTES) && (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
-		return 1;
+		return 0;
 	}
-	
-	return 0;
+	return -1;
 }
-
 
 int existsFile(char* path) {
 
 	DWORD attributes = GetFileAttributes(path);
 	if (attributes != INVALID_FILE_ATTRIBUTES) {
-		return 1;
+		return 0;
 	}
-
-	return 0;
+	return -1;
 }
-
 
 int appendToFile(char* path, char* text) {
 

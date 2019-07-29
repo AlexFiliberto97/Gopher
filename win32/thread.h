@@ -6,8 +6,9 @@
 	#include "thread.c"
 
 	void initThread();
-	int startThread(void*(*f)(void*), void*);
+	int joinCollect(int);
+	int startThread(void* (*f)(void *), void*, int);
 	int threadIsEnded(HANDLE);
 	void* threadCollector(void*);
-
+	
 #endif

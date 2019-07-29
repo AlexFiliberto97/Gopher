@@ -4,7 +4,6 @@
 #include "server.h"
 #include "error.h"
 
-
 #ifndef __linux__
 	#include "win32/environment.h"
 #else
@@ -14,18 +13,15 @@
     #include "posix/thread.h"
 #endif
 
-
 int main(int argc, char** argv) {
 
-	int err;
+	no_daemon(); 
 
-    // no_daemon(); 
-    
+	int err;
 	init_env();
-	
 	err = start_env();
 	if (err != 0) {
-		throwError(2, err, -1);
+		throwError(1, err);
 		return -1;
 	}
 
@@ -34,14 +30,14 @@ int main(int argc, char** argv) {
         err = serverInit(argc, argv);
     	if (err != 0) {
     		clean_env();
-    		throwError(2, err, -1);
+    		throwError(1, err);
     		return -1;
     	}
 
 		err = serverStart();
 		if (err != 0) {
 			clean_env();
-			throwError(2, err, -1);
+			throwError(1, err);
 			return -1;
 		}
 		
@@ -49,14 +45,10 @@ int main(int argc, char** argv) {
 		if (err != 0) {
 			clean_env();
 			serverStop();
-			throwError(2, err, -1);
+			throwError(1, err);
 			return -1;
 		}
-		
 	}
-
 	clean_env();
-
 	return 0;
-
 }

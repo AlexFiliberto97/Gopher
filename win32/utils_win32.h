@@ -2,15 +2,16 @@
 
 	#define UTILS_WIN32_H_
 
-	#include <stdio.h>
+	#include <windows.h>
 	#include "utils_win32.c"
-
-	BOOL WINAPI CtrlHandler(DWORD);
-	int setKeyboardEvent();
-	int countDirElements(char*) ;
-	char* readFile(char*);
+	
+	void freeArray(char**, int);
+	long long getFileSize(char*);
+	int countDirElements(char*);
+	char* readFile(char*, int*);
 	char** listDir(char*, int*);
 	int existsDir(char*);
+	int existsFile(char*);
 	int appendToFile(char*, char*);
 
 #endif

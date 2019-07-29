@@ -18,7 +18,7 @@
 	int existsDir(char*);
 	int existsDir(char*) ;
 	int countDirElements(char*);
-	size_t getFileSize2(char* file_name);
+	size_t getFileSize(char* file_name);
 	char* readFile(char*, size_t*);
 	char** listDir(char*, int*);
 	void* create_shared_memory(size_t);
