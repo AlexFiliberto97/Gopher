@@ -1,3 +1,0 @@
-127.0.0.1:59056 /home/giorgio/Programming/SoIIProject/root/imgs/foto.nef 19163865 byte
-127.0.0.1:59568 /home/giorgio/Programming/SoIIProject/root/imgs/foto.nef 19163865 byte
-127.0.0.1:48305 /home/giorgio/Programming/SoIIProject/root/santoantonio.7z 125191848 byte
