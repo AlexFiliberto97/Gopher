@@ -96,15 +96,22 @@ char* recvAll(int sock, size_t* len) {
     size_t r_tot = 0;
 
     while ((r = recv(sock, recvbuf, RECVBUF_SIZE, 0)) > 0) {
+
     	r_tot += r;
     	msg = (char *) realloc(msg, r_tot);
     	if (msg == NULL) {
 			throwError(ALLOC_ERROR);
 			return NULL;
 		}
+
 		memcpy((void *) &msg[r_tot-r], (void *) recvbuf, r);
-    	if (memcmp((void *) &msg[r_tot-2], (void *) "\r\n", 2) == 0) break;
+    	if (memcmp((void *) &msg[r_tot -2], (void *) "\r\n", 2) == 0) break;
     }
+
+    if (r < 0) {
+    	free(msg);
+    	return NULL;
+    } 
 
     *len = r_tot;
     return msg;
