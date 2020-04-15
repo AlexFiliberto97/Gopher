@@ -65,8 +65,6 @@ int writePipe(char* msg) {
 	sprintf(comp_msg, "%s%s", size, msg);
 	DWORD written = 0;
 	BOOL succ = WriteFile(loggerPipe.hWrite, comp_msg, strlen(comp_msg) +1, &written, NULL);
-	if (succ == FALSE) printf("SUCC DIO\n");
-	if (written < strlen(comp_msg) + 1) printf("STRLEN DIO\n");
 	if (written < strlen(comp_msg) + 1 || succ == FALSE) {
 		free(comp_msg);
 		return WRITE_PIPE;
